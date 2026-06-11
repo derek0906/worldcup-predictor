@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026世界杯赛前预测</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="site-header">
+        <div>
+          <p class="eyebrow">FIFA World Cup 26</p>
+          <h1>赛前预测情报站</h1>
+        </div>
+        <div class="status-pill">中文预测模型</div>
+      </header>
+
+      <section class="match-selector" aria-label="选择比赛">
+        <label class="field-label" for="matchSelect">选择比赛</label>
+        <select id="matchSelect"></select>
+        <button id="predictButton" class="primary-button" type="button">更新预测</button>
+      </section>
+
+      <section class="match-brief" aria-label="比赛预测摘要">
+        <div class="brief-main">
+          <div class="match-meta">
+            <span id="matchGroup"></span>
+            <span id="matchVenue"></span>
+          </div>
+
+          <div class="brief-content">
+            <div class="versus-row">
+              <div class="team-block">
+                <span id="homeFlag" class="team-flag"></span>
+                <strong id="homeName"></strong>
+                <small id="homeShort"></small>
+              </div>
+              <div class="score-block">
+                <p>推荐比分</p>
+                <strong id="scoreText"></strong>
+                <span id="trendTag"></span>
+              </div>
+              <div class="team-block away">
+                <span id="awayFlag" class="team-flag"></span>
+                <strong id="awayName"></strong>
+                <small id="awayShort"></small>
+              </div>
+            </div>
+
+            <div class="quick-metrics" aria-label="关键预测指标">
+              <div class="quick-metric">
+                <span>最高胜率</span>
+                <strong id="topPick"></strong>
+              </div>
+              <div class="quick-metric">
+                <span>爆冷</span>
+                <strong id="compactUpset"></strong>
+              </div>
+              <div class="quick-metric">
+                <span>开球</span>
+                <strong id="compactKickoff"></strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="brief-side" aria-label="核心结论">
+          <p class="card-label">快速判断</p>
+          <h2 id="verdictTitle"></h2>
+          <p id="verdictCopy"></p>
+          <button id="copyButton" class="secondary-button" type="button">复制分享文案</button>
+        </aside>
+      </section>
+
+      <section class="probability-section" aria-label="预测概率">
+        <article class="probability-panel win-panel">
+          <div class="panel-heading">
+            <p class="card-label">胜平负概率</p>
+            <span id="confidenceBadge"></span>
+          </div>
+          <div class="prob-row">
+            <span id="homeProbLabel"></span>
+            <div class="prob-track"><div id="homeProbBar"></div></div>
+            <strong id="homeProb"></strong>
+          </div>
+          <div class="prob-row">
+            <span>平局</span>
+            <div class="prob-track"><div id="drawProbBar"></div></div>
+            <strong id="drawProb"></strong>
+          </div>
+          <div class="prob-row">
+            <span id="awayProbLabel"></span>
+            <div class="prob-track"><div id="awayProbBar"></div></div>
+            <strong id="awayProb"></strong>
+          </div>
+        </article>
+
+        <article class="probability-panel compact-panel">
+          <p class="card-label">爆冷概率</p>
+          <div class="metric-number" id="upsetProb"></div>
+          <p id="upsetLabel"></p>
+          <div class="prob-track"><div id="upsetProbBar"></div></div>
+        </article>
+
+        <article class="probability-panel compact-panel">
+          <p class="card-label">开球方习惯预测</p>
+          <div class="kickoff-team" id="kickoffTeam"></div>
+          <p id="kickoffReason"></p>
+        </article>
+      </section>
+
+      <section class="watch-panel" aria-label="赛前看点">
+        <div class="section-heading compact-heading">
+          <p class="card-label">赛前看点</p>
+          <h2>这场该盯什么</h2>
+        </div>
+        <div class="watch-grid">
+          <article class="watch-item">
+            <span>比赛节奏</span>
+            <strong id="tempoTitle"></strong>
+            <p id="tempoCopy"></p>
+          </article>
+          <article class="watch-item">
+            <span>关键变量</span>
+            <strong id="swingTitle"></strong>
+            <p id="swingCopy"></p>
+          </article>
+          <article class="watch-item fun">
+            <span>朋友局讨论点</span>
+            <strong id="friendTitle"></strong>
+            <p id="friendCopy"></p>
+          </article>
+        </div>
+      </section>
+
+      <section class="market-panel" aria-label="市场赔率观察">
+        <div class="market-header">
+          <div>
+            <p class="card-label">市场观察</p>
+            <h2>赔率只做参考，不给购买建议</h2>
+          </div>
+          <span id="marketSource" class="cache-pill"></span>
+        </div>
+        <div class="market-grid">
+          <article class="market-card">
+            <div class="market-card-head">
+              <span>胜平负</span>
+              <strong id="marketReturnRate"></strong>
+            </div>
+            <div id="oddsRows" class="odds-rows"></div>
+          </article>
+          <article class="market-card">
+            <div class="market-card-head">
+              <span>波胆观察</span>
+              <strong id="scoreRisk"></strong>
+            </div>
+            <p id="scoreMarket"></p>
+          </article>
+          <article class="market-card">
+            <div class="market-card-head">
+              <span>角球观察</span>
+              <strong id="cornerRisk"></strong>
+            </div>
+            <p id="cornerMarket"></p>
+          </article>
+        </div>
+        <p class="market-note">
+          市场数据用于理解赔率隐含概率和风险结构，不构成投注、购买或财务建议。
+        </p>
+      </section>
+
+      <section class="analysis-panel" aria-label="模型分析理由">
+        <div class="section-heading">
+          <p class="card-label">模型分析</p>
+          <h2>为什么是这个结果</h2>
+        </div>
+        <div class="analysis-grid">
+          <article class="analysis-item">
+            <span>综合实力</span>
+            <strong id="powerCompare"></strong>
+            <p id="powerReason"></p>
+          </article>
+          <article class="analysis-item">
+            <span>攻防对位</span>
+            <strong id="attackCompare"></strong>
+            <p id="attackReason"></p>
+          </article>
+          <article class="analysis-item">
+            <span>近期状态</span>
+            <strong id="formCompare"></strong>
+            <p id="formReason"></p>
+          </article>
+          <article class="analysis-item">
+            <span>爆冷触发</span>
+            <strong id="upsetReasonTitle"></strong>
+            <p id="upsetReason"></p>
+          </article>
+        </div>
+      </section>
+
+      <section class="ai-panel" aria-label="AI 解读">
+        <div class="ai-header">
+          <div>
+            <p class="card-label">赛前解读</p>
+            <h2>专业判断，带一点朋友局火药味</h2>
+          </div>
+          <span class="cache-pill">静态缓存</span>
+        </div>
+        <p id="aiSummary">
+          正在读取预生成分析...
+        </p>
+      </section>
+
+      <section class="data-note" aria-label="数据说明">
+        <h2>数据说明</h2>
+        <p>
+          赛程结构按 2026 世界杯 48 队、12 组、104 场规则设计；当前原型内置部分真实小组赛赛程样例。
+          胜负模型使用球队实力分、近期状态、攻防评分、世界杯经验和主办地因素计算。
+          OpenAI 解读采用预生成静态缓存，所有用户读取同一份分析内容，不会因访问或点击反复消耗 token。
+          开球方模型预留球队历史开球倾向字段；由于赛前仍由掷硬币决定，结果会被限制在接近五五开的区间。
+        </p>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite">已复制</div>
+    <script src="./app.js"></script>
+  </body>
+</html>
