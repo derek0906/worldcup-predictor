@@ -2,133 +2,337 @@
   "mexico-southAfrica": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.62, "draw": 3.65, "away": 5.8 },
+    "winner": {
+      "home": 1.62,
+      "draw": 3.65,
+      "away": 5.8
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 8.6 },
-      { "score": "1-0", "odds": 7.4 },
-      { "score": "1-1", "odds": 7.8 }
+      {
+        "score": "2-1",
+        "odds": 8.6
+      },
+      {
+        "score": "1-0",
+        "odds": 7.4
+      },
+      {
+        "score": "1-1",
+        "odds": 7.8
+      }
     ],
-    "corners": { "line": 9.5, "over": 1.92, "under": 1.88 }
+    "corners": {
+      "line": 9.5,
+      "over": 1.92,
+      "under": 1.88
+    }
   },
   "korea-czechia": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 2.34, "draw": 3.18, "away": 3.05 },
+    "winner": {
+      "home": 2.34,
+      "draw": 3.18,
+      "away": 3.05
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 9.2 },
-      { "score": "1-1", "odds": 6.4 },
-      { "score": "1-0", "odds": 8.2 }
+      {
+        "score": "2-1",
+        "odds": 9.2
+      },
+      {
+        "score": "1-1",
+        "odds": 6.4
+      },
+      {
+        "score": "1-0",
+        "odds": 8.2
+      }
     ],
-    "corners": { "line": 8.5, "over": 1.86, "under": 1.94 }
+    "corners": {
+      "line": 8.5,
+      "over": 1.86,
+      "under": 1.94
+    }
   },
   "canada-bosnia": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 2.18, "draw": 3.25, "away": 3.35 },
+    "winner": {
+      "home": 2.18,
+      "draw": 3.25,
+      "away": 3.35
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 8.8 },
-      { "score": "1-1", "odds": 6.7 },
-      { "score": "1-0", "odds": 7.9 }
+      {
+        "score": "2-1",
+        "odds": 8.8
+      },
+      {
+        "score": "1-1",
+        "odds": 6.7
+      },
+      {
+        "score": "1-0",
+        "odds": 7.9
+      }
     ],
-    "corners": { "line": 9.0, "over": 1.9, "under": 1.9 }
+    "corners": {
+      "line": 9,
+      "over": 1.9,
+      "under": 1.9
+    }
   },
   "usa-paraguay": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.92, "draw": 3.38, "away": 4.1 },
+    "winner": {
+      "home": 1.92,
+      "draw": 3.38,
+      "away": 4.1
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 8.4 },
-      { "score": "1-0", "odds": 7.1 },
-      { "score": "1-1", "odds": 7.2 }
+      {
+        "score": "2-1",
+        "odds": 8.4
+      },
+      {
+        "score": "1-0",
+        "odds": 7.1
+      },
+      {
+        "score": "1-1",
+        "odds": 7.2
+      }
     ],
-    "corners": { "line": 9.5, "over": 1.95, "under": 1.85 }
+    "corners": {
+      "line": 9.5,
+      "over": 1.95,
+      "under": 1.85
+    }
   },
   "brazil-morocco": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.58, "draw": 3.9, "away": 6.2 },
+    "winner": {
+      "home": 1.58,
+      "draw": 3.9,
+      "away": 6.2
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 8.0 },
-      { "score": "2-0", "odds": 7.2 },
-      { "score": "1-1", "odds": 8.4 }
+      {
+        "score": "2-1",
+        "odds": 8
+      },
+      {
+        "score": "2-0",
+        "odds": 7.2
+      },
+      {
+        "score": "1-1",
+        "odds": 8.4
+      }
     ],
-    "corners": { "line": 10.0, "over": 1.91, "under": 1.89 }
+    "corners": {
+      "line": 10,
+      "over": 1.91,
+      "under": 1.89
+    }
   },
   "germany-curacao": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.22, "draw": 6.3, "away": 12.5 },
+    "winner": {
+      "home": 1.22,
+      "draw": 6.3,
+      "away": 12.5
+    },
     "correctScore": [
-      { "score": "3-1", "odds": 9.4 },
-      { "score": "3-0", "odds": 7.8 },
-      { "score": "2-0", "odds": 6.2 }
+      {
+        "score": "3-1",
+        "odds": 9.4
+      },
+      {
+        "score": "3-0",
+        "odds": 7.8
+      },
+      {
+        "score": "2-0",
+        "odds": 6.2
+      }
     ],
-    "corners": { "line": 10.5, "over": 1.87, "under": 1.93 }
+    "corners": {
+      "line": 10.5,
+      "over": 1.87,
+      "under": 1.93
+    }
   },
   "spain-capeVerde": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.18, "draw": 7.0, "away": 15.0 },
+    "winner": {
+      "home": 1.18,
+      "draw": 7,
+      "away": 15
+    },
     "correctScore": [
-      { "score": "3-1", "odds": 10.0 },
-      { "score": "3-0", "odds": 7.4 },
-      { "score": "2-0", "odds": 5.9 }
+      {
+        "score": "3-1",
+        "odds": 10
+      },
+      {
+        "score": "3-0",
+        "odds": 7.4
+      },
+      {
+        "score": "2-0",
+        "odds": 5.9
+      }
     ],
-    "corners": { "line": 10.5, "over": 1.84, "under": 1.96 }
+    "corners": {
+      "line": 10.5,
+      "over": 1.84,
+      "under": 1.96
+    }
   },
   "france-senegal": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.7, "draw": 3.58, "away": 5.25 },
+    "winner": {
+      "home": 1.7,
+      "draw": 3.58,
+      "away": 5.25
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 8.2 },
-      { "score": "1-0", "odds": 7.0 },
-      { "score": "1-1", "odds": 7.4 }
+      {
+        "score": "2-1",
+        "odds": 8.2
+      },
+      {
+        "score": "1-0",
+        "odds": 7
+      },
+      {
+        "score": "1-1",
+        "odds": 7.4
+      }
     ],
-    "corners": { "line": 9.5, "over": 1.88, "under": 1.92 }
+    "corners": {
+      "line": 9.5,
+      "over": 1.88,
+      "under": 1.92
+    }
   },
   "argentina-algeria": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.55, "draw": 4.05, "away": 6.6 },
+    "winner": {
+      "home": 1.55,
+      "draw": 4.05,
+      "away": 6.6
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 8.1 },
-      { "score": "2-0", "odds": 7.0 },
-      { "score": "1-0", "odds": 6.8 }
+      {
+        "score": "2-1",
+        "odds": 8.1
+      },
+      {
+        "score": "2-0",
+        "odds": 7
+      },
+      {
+        "score": "1-0",
+        "odds": 6.8
+      }
     ],
-    "corners": { "line": 9.5, "over": 1.9, "under": 1.9 }
+    "corners": {
+      "line": 9.5,
+      "over": 1.9,
+      "under": 1.9
+    }
   },
   "austria-jordan": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.74, "draw": 3.55, "away": 5.05 },
+    "winner": {
+      "home": 1.74,
+      "draw": 3.55,
+      "away": 5.05
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 8.3 },
-      { "score": "1-0", "odds": 7.2 },
-      { "score": "1-1", "odds": 7.6 }
+      {
+        "score": "2-1",
+        "odds": 8.3
+      },
+      {
+        "score": "1-0",
+        "odds": 7.2
+      },
+      {
+        "score": "1-1",
+        "odds": 7.6
+      }
     ],
-    "corners": { "line": 9.0, "over": 1.89, "under": 1.91 }
+    "corners": {
+      "line": 9,
+      "over": 1.89,
+      "under": 1.91
+    }
   },
   "england-croatia": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.95, "draw": 3.42, "away": 3.95 },
+    "winner": {
+      "home": 1.95,
+      "draw": 3.42,
+      "away": 3.95
+    },
     "correctScore": [
-      { "score": "3-2", "odds": 22.0 },
-      { "score": "2-1", "odds": 8.8 },
-      { "score": "1-1", "odds": 6.8 }
+      {
+        "score": "3-2",
+        "odds": 22
+      },
+      {
+        "score": "2-1",
+        "odds": 8.8
+      },
+      {
+        "score": "1-1",
+        "odds": 6.8
+      }
     ],
-    "corners": { "line": 9.5, "over": 1.91, "under": 1.89 }
+    "corners": {
+      "line": 9.5,
+      "over": 1.91,
+      "under": 1.89
+    }
   },
   "portugal-colombia": {
     "source": "示例市场数据",
     "updatedAt": "2026-06-11 20:00",
-    "winner": { "home": 1.82, "draw": 3.5, "away": 4.45 },
+    "winner": {
+      "home": 1.82,
+      "draw": 3.5,
+      "away": 4.45
+    },
     "correctScore": [
-      { "score": "2-1", "odds": 8.5 },
-      { "score": "1-1", "odds": 7.0 },
-      { "score": "1-0", "odds": 7.4 }
+      {
+        "score": "2-1",
+        "odds": 8.5
+      },
+      {
+        "score": "1-1",
+        "odds": 7
+      },
+      {
+        "score": "1-0",
+        "odds": 7.4
+      }
     ],
-    "corners": { "line": 9.5, "over": 1.93, "under": 1.87 }
+    "corners": {
+      "line": 9.5,
+      "over": 1.93,
+      "under": 1.87
+    }
   }
 }
