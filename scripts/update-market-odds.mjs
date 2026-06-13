@@ -1,17 +1,24 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-const outputPath = "data/market-odds.json";
+const outputPath = process.argv[2] || "data/market-odds.json";
 const existing = await readExistingOdds();
 const now = new Date().toISOString();
 
 let nextOdds = existing;
+let shouldWrite = false;
 
 if (process.env.MARKET_ODDS_SOURCE_URL) {
   nextOdds = await fetchNormalizedOdds(existing);
+  shouldWrite = true;
 } else if (process.env.ODDS_API_KEY) {
   nextOdds = await fetchTheOddsApi(existing);
+  shouldWrite = true;
 } else {
-  console.log("No odds provider configured. Keeping existing data unchanged.");
+  console.log("No odds provider configured. Skipping market odds cache update.");
+}
+
+if (!shouldWrite) {
+  process.exit(0);
 }
 
 await writeFile(outputPath, `${JSON.stringify(nextOdds, null, 2)}\n`);

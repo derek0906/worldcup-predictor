@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "test": "node scripts/check-site.mjs"
+  },
+  "devDependencies": {}
+}

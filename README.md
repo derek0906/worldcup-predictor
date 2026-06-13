@@ -18,6 +18,21 @@ OPENAI_API_KEY=你的key node scripts/generate-ai-analysis-cache.mjs
 
 把项目发布到 Netlify 即可。当前 `netlify.toml` 是纯静态发布配置，不包含运行时函数。
 
+## 本地检查
+
+项目不需要构建。修改数据或脚本后，运行：
+
+```bash
+node scripts/check-site.mjs
+```
+
+检查内容包括：
+
+- 比赛是否包含 `kickoffAt` 和 `status`，避免赛后还伪装成赛前预测。
+- 市场赔率 JSON 是否包含基础胜平负字段。
+- 市场数据缺少波胆或角球时，前端是否有兜底文案。
+- 没有配置赔率数据源时，更新脚本是否跳过写入，避免制造“自动更新成功”的错觉。
+
 ## 定时市场数据
 
 市场赔率观察读取 `data/market-odds.json`。仓库内的 GitHub Actions 会每 30 分钟运行一次：
@@ -53,6 +68,8 @@ node scripts/update-market-odds.mjs
 ```
 
 网站只展示隐含概率、返还率和风险观察，不输出具体购买建议。
+
+如果没有配置 `ODDS_API_KEY` 或 `MARKET_ODDS_SOURCE_URL`，脚本会直接跳过更新，不会重写旧缓存。
 
 ## 后续可丰富的内容
 

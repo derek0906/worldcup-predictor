@@ -269,6 +269,9 @@ const matches = [
   {
     group: "A组",
     date: "6月11日",
+    kickoffAt: "2026-06-11T19:00:00Z",
+    status: "final",
+    result: { home: 2, away: 0 },
     venue: "墨西哥城",
     home: "mexico",
     away: "southAfrica",
@@ -276,6 +279,9 @@ const matches = [
   {
     group: "A组",
     date: "6月11日",
+    kickoffAt: "2026-06-12T01:00:00Z",
+    status: "final",
+    result: { home: 2, away: 1 },
     venue: "瓜达拉哈拉",
     home: "korea",
     away: "czechia",
@@ -283,6 +289,9 @@ const matches = [
   {
     group: "B组",
     date: "6月12日",
+    kickoffAt: "2026-06-12T19:00:00Z",
+    status: "final",
+    result: { home: 1, away: 1 },
     venue: "多伦多",
     home: "canada",
     away: "bosnia",
@@ -290,6 +299,9 @@ const matches = [
   {
     group: "D组",
     date: "6月12日",
+    kickoffAt: "2026-06-13T01:00:00Z",
+    status: "final",
+    result: { home: 4, away: 1 },
     venue: "洛杉矶",
     home: "usa",
     away: "paraguay",
@@ -297,6 +309,8 @@ const matches = [
   {
     group: "C组",
     date: "6月13日",
+    kickoffAt: "2026-06-13T22:00:00Z",
+    status: "pre",
     venue: "纽约/新泽西",
     home: "brazil",
     away: "morocco",
@@ -304,6 +318,8 @@ const matches = [
   {
     group: "E组",
     date: "6月14日",
+    kickoffAt: "2026-06-14T19:00:00Z",
+    status: "pre",
     venue: "休斯敦",
     home: "germany",
     away: "curacao",
@@ -311,6 +327,8 @@ const matches = [
   {
     group: "H组",
     date: "6月15日",
+    kickoffAt: "2026-06-15T22:00:00Z",
+    status: "pre",
     venue: "亚特兰大",
     home: "spain",
     away: "capeVerde",
@@ -318,6 +336,8 @@ const matches = [
   {
     group: "I组",
     date: "6月16日",
+    kickoffAt: "2026-06-16T19:00:00Z",
+    status: "pre",
     venue: "纽约/新泽西",
     home: "france",
     away: "senegal",
@@ -325,6 +345,8 @@ const matches = [
   {
     group: "J组",
     date: "6月16日",
+    kickoffAt: "2026-06-16T22:00:00Z",
+    status: "pre",
     venue: "堪萨斯城",
     home: "argentina",
     away: "algeria",
@@ -332,6 +354,8 @@ const matches = [
   {
     group: "J组",
     date: "6月16日",
+    kickoffAt: "2026-06-17T01:00:00Z",
+    status: "pre",
     venue: "旧金山湾区",
     home: "austria",
     away: "jordan",
@@ -339,6 +363,8 @@ const matches = [
   {
     group: "L组",
     date: "6月17日",
+    kickoffAt: "2026-06-17T22:00:00Z",
+    status: "pre",
     venue: "达拉斯",
     home: "england",
     away: "croatia",
@@ -346,6 +372,8 @@ const matches = [
   {
     group: "K组",
     date: "6月17日",
+    kickoffAt: "2026-06-18T01:00:00Z",
+    status: "pre",
     venue: "休斯敦",
     home: "portugal",
     away: "colombia",
@@ -573,6 +601,45 @@ function signedGap(value) {
   return value.toFixed(1);
 }
 
+function formatKickoff(kickoffAt) {
+  if (!kickoffAt) return "时间待定";
+  const date = new Date(kickoffAt);
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+  }).format(date);
+}
+
+function renderMatchStatus(match) {
+  if (match.status === "final" && match.result) {
+    return `已完赛 · 赛果 ${match.result.home}-${match.result.away}`;
+  }
+
+  if (match.status === "live") {
+    return "进行中";
+  }
+
+  return `赛前 · 北京时间 ${formatKickoff(match.kickoffAt)}`;
+}
+
+function displayScore(match, result) {
+  if (match.status === "final" && match.result) {
+    return {
+      score: `${match.result.home}-${match.result.away}`,
+      tag: `赛前模型原推荐 ${result.homeGoals}-${result.awayGoals}`,
+    };
+  }
+
+  return {
+    score: `${result.homeGoals}-${result.awayGoals}`,
+    tag: trendText(result),
+  };
+}
+
 function leaderText(home, away, homeValue, awayValue, suffix = "分") {
   if (homeValue === awayValue) return `持平 ${homeValue}${suffix}`;
   const leader = homeValue > awayValue ? home : away;
@@ -757,7 +824,7 @@ function marketRiskLabel(value) {
 
 function renderMarket(match, result) {
   const market = marketOddsCache[matchCacheKey(match)];
-  if (!market) {
+  if (!market || !market.winner) {
     elements.marketSource.textContent = "无市场数据";
     elements.marketReturnRate.textContent = "--";
     elements.oddsRows.innerHTML = "<p class=\"market-empty\">当前比赛暂无赔率观察数据。</p>";
@@ -795,22 +862,41 @@ function renderMarket(match, result) {
     })
     .join("");
 
-  const closestScore = market.correctScore[0];
-  const scoreRisk = marketRiskLabel(closestScore.odds);
-  elements.scoreRisk.textContent = scoreRisk;
-  elements.scoreMarket.textContent = `市场样例低赔波胆包含 ${market.correctScore
-    .map((item) => `${item.score}(${item.odds.toFixed(1)})`)
-    .join("、")}。波胆赔率离散度高，适合做结果分布观察，不适合当稳定判断。`;
+  const scoreMarkets = Array.isArray(market.correctScore) ? market.correctScore : [];
+  if (scoreMarkets.length > 0) {
+    const closestScore = scoreMarkets[0];
+    const scoreRisk = marketRiskLabel(closestScore.odds);
+    elements.scoreRisk.textContent = scoreRisk;
+    elements.scoreMarket.textContent = `市场样例低赔波胆包含 ${scoreMarkets
+      .map((item) => `${item.score}(${item.odds.toFixed(1)})`)
+      .join("、")}。波胆赔率离散度高，适合做结果分布观察，不适合当稳定判断。`;
+  } else {
+    elements.scoreRisk.textContent = "未提供";
+    elements.scoreMarket.textContent = "当前数据源只提供胜平负赔率，暂无波胆市场观察。";
+  }
 
-  const cornerGap = Math.abs(market.corners.over - market.corners.under);
-  elements.cornerRisk.textContent = cornerGap <= 0.08 ? "分歧较小" : "分歧明显";
-  elements.cornerMarket.textContent = `角球线 ${market.corners.line}，大球 ${market.corners.over.toFixed(2)} / 小球 ${market.corners.under.toFixed(2)}。角球受战术、比分状态和临场节奏影响很大，只展示市场温度。`;
+  if (market.corners && typeof market.corners.over === "number" && typeof market.corners.under === "number") {
+    const cornerGap = Math.abs(market.corners.over - market.corners.under);
+    elements.cornerRisk.textContent = cornerGap <= 0.08 ? "分歧较小" : "分歧明显";
+    elements.cornerMarket.textContent = `角球线 ${market.corners.line}，大球 ${market.corners.over.toFixed(2)} / 小球 ${market.corners.under.toFixed(2)}。角球受战术、比分状态和临场节奏影响很大，只展示市场温度。`;
+  } else {
+    elements.cornerRisk.textContent = "未提供";
+    elements.cornerMarket.textContent = "当前数据源暂无角球盘口，保留胜平负市场观察。";
+  }
 }
 
 function cachedAiText(match, payload) {
   const cached = aiAnalysisCache[matchCacheKey(match)];
-  if (cached && cached.analysis) return cached.analysis;
-  return `${localAiFallback(payload)}\n\n这是一段本地兜底分析。正式上线前请运行生成脚本更新 data/ai-analysis.json，让所有用户读取同一份 OpenAI 预生成内容。`;
+  const text =
+    cached && cached.analysis
+      ? cached.analysis
+      : `${localAiFallback(payload)}\n\n这是一段本地兜底分析。正式上线前请运行生成脚本更新 data/ai-analysis.json，让所有用户读取同一份 OpenAI 预生成内容。`;
+
+  if (match.status === "final" && match.result) {
+    return `本场已完赛，以下内容保留为赛前模型回看，不代表赛后复盘结论。\n\n${text}`;
+  }
+
+  return text;
 }
 
 async function loadAiAnalysisCache() {
@@ -839,14 +925,15 @@ function render() {
   const verdict = verdictText(result);
   const analysis = analysisText(result);
   const watch = watchText(result);
+  const scoreDisplay = displayScore(match, result);
   latestPayload = buildAnalysisPayload(match, result, verdict, analysis);
 
   elements.homeFlag.textContent = result.home.flag;
   elements.awayFlag.textContent = result.away.flag;
   elements.homeName.textContent = result.home.name;
   elements.awayName.textContent = result.away.name;
-  elements.matchGroup.textContent = `${match.group} · ${match.date}`;
-  elements.matchVenue.textContent = match.venue;
+  elements.matchGroup.textContent = `${match.group} · ${renderMatchStatus(match)}`;
+  elements.matchVenue.textContent = `${match.venue} · ${formatKickoff(match.kickoffAt)}`;
   elements.topPick.textContent = topPickText(result);
   elements.compactUpset.textContent = `${result.upsetProb}%`;
   elements.compactKickoff.textContent = `${result.kickoffWinner.name} ${result.kickoffProb}%`;
@@ -862,8 +949,8 @@ function render() {
 
   elements.homeShort.textContent = result.home.short;
   elements.awayShort.textContent = result.away.short;
-  elements.scoreText.textContent = `${result.homeGoals}-${result.awayGoals}`;
-  elements.trendTag.textContent = trendText(result);
+  elements.scoreText.textContent = scoreDisplay.score;
+  elements.trendTag.textContent = scoreDisplay.tag;
   elements.upsetProb.textContent = `${result.upsetProb}%`;
   elements.upsetLabel.textContent = `${result.underdog.name} 爆冷`;
   elements.upsetProbBar.style.width = `${result.upsetProb}%`;
@@ -903,7 +990,7 @@ async function init() {
     const away = teams[match.away];
     const option = document.createElement("option");
     option.value = String(index);
-    option.textContent = `${match.date} ${match.group}｜${home.name} vs ${away.name}｜${match.venue}`;
+    option.textContent = `${match.date} ${match.group}｜${home.name} vs ${away.name}｜${renderMatchStatus(match)}`;
     elements.matchSelect.appendChild(option);
   });
 
