@@ -3,6 +3,7 @@ import {
   jsonResponse,
   loadMatches,
   loadPredictions,
+  loadRewardClaims,
   sanitizePredictionBatch,
   savePredictions,
 } from "./_leaderboard-store.mjs";
@@ -28,9 +29,10 @@ export default async function handler(request) {
     predictions.push(result.prediction);
 
     const saved = await savePredictions(predictions);
+    const rewardClaims = await loadRewardClaims();
     return jsonResponse({
       prediction: result.prediction,
-      leaderboard: buildLeaderboard(saved, matches),
+      leaderboard: buildLeaderboard(saved, matches, rewardClaims),
     });
   } catch (error) {
     return jsonResponse({

@@ -1,9 +1,9 @@
-import { buildLeaderboard, jsonResponse, loadMatches, loadPredictions } from "./_leaderboard-store.mjs";
+import { buildLeaderboard, jsonResponse, loadMatches, loadPredictions, loadRewardClaims } from "./_leaderboard-store.mjs";
 
 export default async function handler() {
   try {
-    const [predictions, matches] = await Promise.all([loadPredictions(), loadMatches()]);
-    return jsonResponse(buildLeaderboard(predictions, matches));
+    const [predictions, matches, rewardClaims] = await Promise.all([loadPredictions(), loadMatches(), loadRewardClaims()]);
+    return jsonResponse(buildLeaderboard(predictions, matches, rewardClaims));
   } catch (error) {
     return jsonResponse({
       rows: [],

@@ -560,6 +560,12 @@ const elements = {
   leaderboardRows: $("#leaderboardRows"),
   leaderboardUpdated: $("#leaderboardUpdated"),
   leaderboardNote: $("#leaderboardNote"),
+  rewardBanner: $("#rewardBanner"),
+  rewardClaimForm: $("#rewardClaimForm"),
+  rewardPayoutMethod: $("#rewardPayoutMethod"),
+  rewardContactInput: $("#rewardContactInput"),
+  rewardClaimButton: $("#rewardClaimButton"),
+  rewardClaimNotice: $("#rewardClaimNotice"),
   toast: $("#toast"),
 };
 
@@ -572,6 +578,7 @@ const DEVICE_ID_KEY = "worldcupPredictorDeviceId";
 const PREDICTION_DRAFTS_KEY = "worldcupPredictorDrafts";
 const PREDICTION_NICKNAME_KEY = "worldcupPredictorNickname";
 const SHARE_SITE_URL = "https://storied-blini-c17d9b.netlify.app/";
+const DAILY_REWARD_AMOUNT = 100;
 
 function storageGet(key, fallback) {
   try {
@@ -1420,10 +1427,57 @@ function renderLeaderboardTabs() {
   });
 }
 
+function activeRewardStatus(data = leaderboardCache) {
+  const rewards = data.dailyRewards && typeof data.dailyRewards === "object" ? data.dailyRewards : {};
+  return rewards[activeBatchKey()] || null;
+}
+
+function renderRewardBanner(data = leaderboardCache, rows = leaderboardRowsForMode(data)) {
+  const reward = activeRewardStatus(data);
+  const batchKey = activeBatchKey();
+  const nickname = elements.nicknameInput.value.trim();
+  const topRow = rows[0] || null;
+  const settled = Boolean(reward?.settled);
+  const claimed = Boolean(reward?.claimed);
+  const winnerNickname = reward?.winnerNickname || (settled ? topRow?.nickname : "");
+
+  if (state.leaderboardMode === "overall") {
+    elements.rewardBanner.innerHTML = `
+      <span>每日冠军奖励</span>
+      <strong>${DAILY_REWARD_AMOUNT} RMB</strong>
+      <small>奖金按当天榜发放；总榜保留荣誉排名。</small>
+    `;
+    elements.rewardClaimForm.hidden = true;
+    return;
+  }
+
+  const message = !topRow
+    ? `${batchKey} 还没人交票，第一张认真票可能就是今天的故事开头。`
+    : !settled
+      ? `${batchKey} 比赛全部结束后自动结算，当天榜第一名可申请领取。`
+      : claimed
+        ? `今日冠军 ${winnerNickname} 已提交领奖信息，等待人工发放。`
+        : `今日冠军 ${winnerNickname}，${reward?.winnerScoreText || topRow.batchScoreText || batchScoreText(topRow)}，可申请领取。`;
+
+  elements.rewardBanner.innerHTML = `
+    <span>每日冠军奖励</span>
+    <strong>${DAILY_REWARD_AMOUNT} RMB</strong>
+    <small>${escapeHtml(message)}</small>
+  `;
+
+  const canClaim = settled && !claimed && winnerNickname && nickname && winnerNickname === nickname;
+  elements.rewardClaimForm.hidden = !canClaim;
+  if (canClaim) {
+    elements.rewardClaimButton.disabled = false;
+    elements.rewardClaimNotice.textContent = "只保存给站长人工发奖，榜单不会公开你的联系方式。";
+  }
+}
+
 function renderLeaderboard(data = leaderboardCache, mode = "online") {
   leaderboardCache = data;
   const rows = leaderboardRowsForMode(data);
   renderLeaderboardTabs();
+  renderRewardBanner(data, rows);
   elements.leaderboardStatus.textContent = mode === "local" ? "本地模式" : "榜单已更新";
   elements.leaderboardUpdated.textContent = data.updatedAt ? formatLeaderboardTime(data.updatedAt) : "娱乐榜";
   elements.leaderboardNote.textContent =
@@ -1601,6 +1655,43 @@ async function submitPredictionBatch() {
     if (!message.includes("已经提交")) {
       renderLeaderboard({ rows: [], recent: [], note: "当前为本地模式：公开榜单部署后可用。" }, "local");
     }
+  }
+}
+
+async function submitRewardClaim() {
+  const nickname = elements.nicknameInput.value.trim();
+  const contact = elements.rewardContactInput.value.trim();
+  if (!nickname) {
+    elements.rewardClaimNotice.textContent = "先填榜单昵称，系统要确认你是不是当天第一。";
+    return;
+  }
+  if (contact.length < 4) {
+    elements.rewardClaimNotice.textContent = "请填写有效联系方式，方便站长人工发奖。";
+    return;
+  }
+
+  elements.rewardClaimButton.disabled = true;
+  elements.rewardClaimNotice.textContent = "正在提交领奖申请...";
+
+  try {
+    const response = await fetch("/.netlify/functions/rewards", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        batchKey: activeBatchKey(),
+        nickname,
+        payoutMethod: elements.rewardPayoutMethod.value,
+        contact,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "领奖申请提交失败");
+    renderLeaderboard(data.leaderboard);
+    elements.rewardClaimNotice.textContent = `领奖申请已收到，核对码 ${data.claimCode}，站长会人工发放。`;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "领奖申请提交失败";
+    elements.rewardClaimButton.disabled = false;
+    elements.rewardClaimNotice.textContent = `提交失败：${message}。`;
   }
 }
 
@@ -2134,6 +2225,7 @@ async function init() {
   elements.nicknameInput.addEventListener("input", () => {
     storageSet(PREDICTION_NICKNAME_KEY, elements.nicknameInput.value.trim());
     multiStrategyMatches().forEach((match) => updateDraftForMatch(match, {}));
+    renderRewardBanner(leaderboardCache);
   });
 
   elements.multiScoreList.addEventListener("input", handleMultiScoreInput);
@@ -2142,6 +2234,11 @@ async function init() {
   elements.predictionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     await submitPredictionBatch();
+  });
+
+  elements.rewardClaimForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submitRewardClaim();
   });
 
   elements.copyMultiStrategyButton.addEventListener("click", async () => {

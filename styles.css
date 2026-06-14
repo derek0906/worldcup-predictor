@@ -958,6 +958,50 @@ select {
   gap: 12px;
 }
 
+.reward-banner {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(217, 163, 25, 0.55);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(243, 214, 78, 0.28), rgba(15, 139, 95, 0.12)),
+    var(--ticket);
+  color: var(--green-dark);
+}
+
+.reward-banner span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.reward-banner strong {
+  color: #7a4d00;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.reward-banner small {
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.reward-claim-form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed rgba(15, 139, 95, 0.4);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.reward-claim-form[hidden] {
+  display: none;
+}
+
 .leaderboard-rows {
   display: grid;
   gap: 8px;
@@ -1309,7 +1353,7 @@ select {
 
 @media (max-width: 520px) {
   .page-shell {
-    width: min(100% - 18px, 1160px);
+    width: min(100% - 12px, 1160px);
     padding: 12px 0 28px;
   }
 
@@ -1327,12 +1371,27 @@ select {
   }
 
   .site-header {
+    align-items: flex-start;
+    flex-direction: column;
     gap: 10px;
     margin-bottom: 12px;
   }
 
   h1 {
-    font-size: 32px;
+    font-size: 30px;
+    line-height: 1.05;
+  }
+
+  .site-subtitle {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .status-pill {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
   }
 
   .match-selector {

@@ -211,6 +211,27 @@
               <button class="selected" data-leaderboard-mode="daily" type="button">当天榜</button>
               <button data-leaderboard-mode="overall" type="button">总榜</button>
             </div>
+            <div id="rewardBanner" class="reward-banner">
+              <span>每日冠军奖励</span>
+              <strong>100 RMB</strong>
+              <small>比赛全部结束后，当天榜第一名可申请领取。</small>
+            </div>
+            <form id="rewardClaimForm" class="reward-claim-form" hidden>
+              <label class="prediction-field">
+                <span>领奖方式</span>
+                <select id="rewardPayoutMethod">
+                  <option value="wechat">微信</option>
+                  <option value="alipay">支付宝</option>
+                  <option value="phone">手机号</option>
+                </select>
+              </label>
+              <label class="prediction-field">
+                <span>领奖联系方式</span>
+                <input id="rewardContactInput" type="text" maxlength="80" placeholder="只会后台保存，榜单不公开" autocomplete="off" />
+              </label>
+              <button id="rewardClaimButton" class="secondary-button" type="submit">我是今日第一，申请领取</button>
+              <p id="rewardClaimNotice" class="market-note"></p>
+            </form>
             <div id="leaderboardRows" class="leaderboard-rows"></div>
             <p id="leaderboardNote" class="market-note">娱乐榜单，非严格防作弊。</p>
           </aside>

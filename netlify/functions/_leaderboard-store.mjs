@@ -4,7 +4,11 @@ import { readFile } from "node:fs/promises";
 
 const STORE_NAME = "worldcup-predictions";
 const PREDICTIONS_KEY = "predictions.json";
+const REWARD_CLAIMS_KEY = "reward-claims.json";
 const MAX_PREDICTIONS = 1000;
+const MAX_REWARD_CLAIMS = 500;
+export const DAILY_REWARD_AMOUNT = 100;
+export const DAILY_REWARD_CURRENCY = "RMB";
 const MATCHES_PATH = new URL("../../data/matches.json", import.meta.url);
 
 export function getPredictionsStore() {
@@ -25,6 +29,39 @@ export async function savePredictions(predictions) {
     .slice(-MAX_PREDICTIONS);
   await store.setJSON(PREDICTIONS_KEY, trimmed);
   return trimmed;
+}
+
+export async function loadRewardClaims() {
+  const store = getPredictionsStore();
+  const saved = await store.get(REWARD_CLAIMS_KEY, { type: "json" });
+  return Array.isArray(saved) ? saved : [];
+}
+
+export async function saveRewardClaims(claims) {
+  const store = getPredictionsStore();
+  const trimmed = claims
+    .slice()
+    .sort((a, b) => String(a.updatedAt).localeCompare(String(b.updatedAt)))
+    .slice(-MAX_REWARD_CLAIMS);
+  await store.setJSON(REWARD_CLAIMS_KEY, trimmed);
+  return trimmed;
+}
+
+export async function saveRewardClaim(claim) {
+  const claims = await loadRewardClaims();
+  const existingIndex = claims.findIndex((item) => item.id === claim.id);
+  if (existingIndex >= 0) {
+    claims[existingIndex] = {
+      ...claims[existingIndex],
+      ...claim,
+      createdAt: claims[existingIndex].createdAt || claim.createdAt,
+      updatedAt: claim.updatedAt,
+    };
+  } else {
+    claims.push(claim);
+  }
+  await saveRewardClaims(claims);
+  return claim;
 }
 
 export async function loadMatches() {
@@ -223,6 +260,74 @@ export function sanitizePredictionBatch(input, matches, request, now = new Date(
   };
 }
 
+export function sanitizeRewardClaim(input, predictions, matches, request, claims = [], now = new Date()) {
+  const batchKey = String(input?.batchKey || "")
+    .replace(/[^0-9-]/g, "")
+    .slice(0, 10);
+  if (!batchKey) {
+    return { error: "缺少领奖日期" };
+  }
+
+  const nickname = String(input?.nickname || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 18);
+  if (!nickname) {
+    return { error: "请输入榜单昵称" };
+  }
+
+  const payoutMethod = sanitizeChoice(input?.payoutMethod, ["wechat", "alipay", "phone"], "wechat");
+  const contact = String(input?.contact || "")
+    .replace(/[\n\r\t]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+  if (contact.length < 4) {
+    return { error: "请填写有效的领奖联系方式" };
+  }
+
+  const batchMatches = matches.filter((match) => matchBatchKey(match) === batchKey);
+  if (batchMatches.length === 0) {
+    return { error: "没有找到这个比赛日" };
+  }
+  if (batchMatches.some((match) => !predictionResult(match))) {
+    return { error: "这一天比赛还没全部结算，暂时不能领奖" };
+  }
+
+  const ipKey = clientIpHash(request);
+  const winnerPrediction = predictions.find((prediction) => prediction.id === `batch:${batchKey}:${ipKey}`);
+  if (!winnerPrediction || winnerPrediction.nickname !== nickname) {
+    return { error: "只能用提交这张冠军票的设备/IP 领奖" };
+  }
+
+  const rewardStatus = buildDailyRewards(predictions, matches, claims)[batchKey];
+  if (!rewardStatus?.winnerNickname) {
+    return { error: "这个比赛日还没有可领奖冠军" };
+  }
+  if (rewardStatus.winnerNickname !== nickname) {
+    return { error: "只有当天榜第一名可以领奖" };
+  }
+
+  const timestamp = now.toISOString();
+  const claimCode = `WC-${batchKey.replace(/-/g, "")}-${ipKey.slice(0, 6).toUpperCase()}`;
+  return {
+    claim: {
+      id: `${batchKey}:${ipKey}`,
+      claimCode,
+      batchKey,
+      nickname,
+      ipKey,
+      payoutMethod,
+      contact,
+      amount: DAILY_REWARD_AMOUNT,
+      currency: DAILY_REWARD_CURRENCY,
+      status: "pending_manual_payout",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+  };
+}
+
 function sanitizeChoice(value, allowed, fallback) {
   const choice = String(value || fallback);
   return allowed.includes(choice) ? choice : fallback;
@@ -275,11 +380,13 @@ function predictionEntries(prediction) {
   return [prediction];
 }
 
-export function buildLeaderboard(predictions, matches) {
+export function buildLeaderboard(predictions, matches, rewardClaims = []) {
   const matchByKey = new Map(matches.map((match) => [match.key || `${match.home}-${match.away}`, match]));
   const overallRows = buildRows(predictions, matchByKey, "overall");
   const dailyRows = {};
-  const batchKeys = [...new Set(predictions.map((prediction) => prediction.batchKey).filter(Boolean))];
+  const matchBatchKeys = matches.map(matchBatchKey).filter(Boolean);
+  const predictionBatchKeys = predictions.map((prediction) => prediction.batchKey).filter(Boolean);
+  const batchKeys = [...new Set([...matchBatchKeys, ...predictionBatchKeys])];
   for (const batchKey of batchKeys) {
     dailyRows[batchKey] = buildRows(
       predictions.filter((prediction) => prediction.batchKey === batchKey),
@@ -312,10 +419,44 @@ export function buildLeaderboard(predictions, matches) {
     rows: overallRows.slice(0, 20),
     overallRows: overallRows.slice(0, 20),
     dailyRows,
+    dailyRewards: buildDailyRewards(predictions, matches, rewardClaims),
     recent,
     updatedAt: new Date().toISOString(),
     note: "娱乐榜单，非严格防作弊。",
   };
+}
+
+export function buildDailyRewards(predictions, matches, rewardClaims = []) {
+  const matchByKey = new Map(matches.map((match) => [match.key || `${match.home}-${match.away}`, match]));
+  const batchKeys = [...new Set(matches.map(matchBatchKey).filter(Boolean))];
+  const rewards = {};
+
+  for (const batchKey of batchKeys) {
+    const batchMatches = matches.filter((match) => matchBatchKey(match) === batchKey);
+    const rows = buildRows(
+      predictions.filter((prediction) => prediction.batchKey === batchKey),
+      matchByKey,
+      "daily",
+    );
+    const settled = batchMatches.length > 0 && batchMatches.every((match) => Boolean(predictionResult(match)));
+    const winner = rows[0] || null;
+    const claim = winner
+      ? rewardClaims.find((item) => item.batchKey === batchKey && item.nickname === winner.nickname)
+      : null;
+
+    rewards[batchKey] = {
+      amount: DAILY_REWARD_AMOUNT,
+      currency: DAILY_REWARD_CURRENCY,
+      settled,
+      totalMatches: batchMatches.length,
+      winnerNickname: settled && winner ? winner.nickname : "",
+      winnerScoreText: settled && winner ? winner.batchScoreText || batchScoreText(winner.batchTotal, winner.batchHits) : "",
+      claimed: Boolean(claim),
+      claimStatus: claim?.status || "",
+    };
+  }
+
+  return rewards;
 }
 
 function buildRows(predictions, matchByKey, mode) {
