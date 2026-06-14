@@ -3,7 +3,7 @@ import {
   jsonResponse,
   loadMatches,
   loadPredictions,
-  sanitizePrediction,
+  sanitizePredictionBatch,
   savePredictions,
 } from "./_leaderboard-store.mjs";
 
@@ -15,19 +15,17 @@ export default async function handler(request) {
   try {
     const matches = await loadMatches();
     const body = await request.json();
-    const result = sanitizePrediction(body, matches);
+    const result = sanitizePredictionBatch(body, matches, request);
     if (result.error) {
       return jsonResponse({ error: result.error }, 400);
     }
 
     const predictions = await loadPredictions();
-    const existing = predictions.findIndex((item) => item.id === result.prediction.id);
-    if (existing >= 0) {
-      result.prediction.createdAt = predictions[existing].createdAt || result.prediction.createdAt;
-      predictions[existing] = result.prediction;
-    } else {
-      predictions.push(result.prediction);
+    const existing = predictions.find((item) => item.id === result.prediction.id);
+    if (existing) {
+      return jsonResponse({ error: "这个 IP 今天已经提交过，不能重复上传" }, 409);
     }
+    predictions.push(result.prediction);
 
     const saved = await savePredictions(predictions);
     return jsonResponse({

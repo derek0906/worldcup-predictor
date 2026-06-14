@@ -181,74 +181,11 @@
               <input id="nicknameInput" type="text" maxlength="18" placeholder="比如 Derek" autocomplete="nickname" />
             </label>
 
-            <div class="prediction-field">
-              <span>你看好谁</span>
-              <div class="pick-buttons" role="group" aria-label="选择胜平负">
-                <button class="pick-button" data-pick="home" type="button" id="pickHomeButton"></button>
-                <button class="pick-button" data-pick="draw" type="button">平局</button>
-                <button class="pick-button" data-pick="away" type="button" id="pickAwayButton"></button>
-              </div>
-            </div>
-
-            <div class="score-confidence-grid">
-              <label class="prediction-field">
-                <span>预测比分</span>
-                <div class="score-inputs">
-                  <input id="scoreHomeInput" type="number" min="0" max="9" inputmode="numeric" />
-                  <strong>:</strong>
-                  <input id="scoreAwayInput" type="number" min="0" max="9" inputmode="numeric" />
-                </div>
-              </label>
-
-              <label class="prediction-field">
-                <span>信心值 <strong id="confidenceValue">70%</strong></span>
-                <input id="confidenceInput" type="range" min="1" max="100" value="70" />
-              </label>
-            </div>
-
-            <div class="strategy-builder" aria-label="组装我的下注策略">
-              <label class="prediction-field">
-                <span>让球策略</span>
-                <select id="spreadChoice">
-                  <option value="none">暂不选让球</option>
-                  <option value="follow">跟让球方向</option>
-                  <option value="avoid">避开让球，只看胜平负</option>
-                </select>
-              </label>
-
-              <label class="prediction-field">
-                <span>大小球</span>
-                <select id="totalChoice">
-                  <option value="none">暂不选大小球</option>
-                  <option value="over">看大球</option>
-                  <option value="under">看小球</option>
-                </select>
-              </label>
-
-              <label class="prediction-field">
-                <span>角球</span>
-                <select id="cornerChoice">
-                  <option value="none">暂不选角球</option>
-                  <option value="over">角球偏大</option>
-                  <option value="under">角球偏小</option>
-                </select>
-              </label>
-
-              <label class="prediction-field">
-                <span>风险风格</span>
-                <select id="riskChoice">
-                  <option value="medium">中等风险</option>
-                  <option value="steady">稳一点</option>
-                  <option value="upset">冷门搏一手</option>
-                </select>
-              </label>
-            </div>
-
             <section id="multiScorePanel" class="multi-score-panel" aria-label="今日多场比分选择">
               <div class="multi-score-head">
                 <div>
                   <span>今日多场比分</span>
-                  <strong>一次填完再复制</strong>
+                  <strong>填完这一张票，再提交到榜单</strong>
                 </div>
                 <small id="multiScoreMeta"></small>
               </div>
@@ -257,35 +194,9 @@
 
             <div class="prediction-actions">
               <button id="submitPredictionButton" class="primary-button" type="submit">提交到连红榜</button>
-              <button id="copyMyPredictionButton" class="secondary-button" type="button">复制策略卡</button>
               <button id="copyMultiStrategyButton" class="secondary-button" type="button">复制今日多场策略</button>
             </div>
-
-            <article id="strategyCard" class="strategy-card" aria-label="我的下注策略分享卡">
-              <div class="strategy-card-head">
-                <span>我的下注策略</span>
-                <strong id="strategyTitle"></strong>
-              </div>
-              <div id="strategyMain" class="strategy-main">
-                <div>
-                  <span>方向</span>
-                  <strong id="strategyPick"></strong>
-                </div>
-                <div>
-                  <span>比分</span>
-                  <strong id="strategyScore"></strong>
-                </div>
-                <div>
-                  <span>信心</span>
-                  <strong id="strategyConfidence"></strong>
-                </div>
-              </div>
-              <p id="strategyReason"></p>
-              <div class="strategy-tags">
-                <span id="strategyRisk"></span>
-                <span id="strategyEdge"></span>
-              </div>
-            </article>
+            <textarea id="shareTextFallback" class="share-text-fallback" readonly hidden></textarea>
 
             <p id="predictionComparison" class="prediction-comparison"></p>
             <p id="predictionNotice" class="market-note"></p>

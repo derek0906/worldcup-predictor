@@ -1,4 +1,5 @@
 import { getStore } from "@netlify/blobs";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
 const STORE_NAME = "worldcup-predictions";
@@ -51,6 +52,33 @@ export function predictionResult(match) {
 export function hasKickedOff(match, now = new Date()) {
   if (!match?.kickoffAt) return false;
   return new Date(match.kickoffAt).getTime() <= now.getTime();
+}
+
+export function chinaDateKey(value = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(value);
+}
+
+export function matchBatchKey(match) {
+  return match?.kickoffAt ? chinaDateKey(new Date(match.kickoffAt)) : "";
+}
+
+export function clientIp(request) {
+  const forwarded = request.headers.get("x-forwarded-for") || "";
+  return (
+    request.headers.get("x-nf-client-connection-ip") ||
+    forwarded.split(",")[0]?.trim() ||
+    request.headers.get("client-ip") ||
+    "unknown"
+  );
+}
+
+export function clientIpHash(request) {
+  return createHash("sha256").update(clientIp(request)).digest("hex").slice(0, 32);
 }
 
 export function sanitizePrediction(input, matches, now = new Date()) {
@@ -117,6 +145,84 @@ export function sanitizePrediction(input, matches, now = new Date()) {
   };
 }
 
+export function sanitizePredictionBatch(input, matches, request, now = new Date()) {
+  const nickname = String(input?.nickname || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 18);
+  if (!nickname) {
+    return { error: "请输入昵称" };
+  }
+
+  const entries = Array.isArray(input?.entries) ? input.entries : [];
+  if (entries.length === 0) {
+    return { error: "请至少填写一场比分" };
+  }
+
+  const matchByKey = new Map(matches.map((match) => [match.key || `${match.home}-${match.away}`, match]));
+  const batchKeys = new Set();
+  const sanitizedEntries = [];
+
+  for (const entry of entries) {
+    const matchKey = String(entry?.matchKey || "").trim();
+    const match = matchByKey.get(matchKey);
+    if (!match) {
+      return { error: "未知比赛" };
+    }
+    if (hasKickedOff(match, now)) {
+      return { error: "今日批次里已有比赛开球，不能再提交预测" };
+    }
+
+    const batchKey = matchBatchKey(match);
+    batchKeys.add(batchKey);
+
+    const scoreHome = Number.parseInt(entry?.scoreHome, 10);
+    const scoreAway = Number.parseInt(entry?.scoreAway, 10);
+    if (!Number.isInteger(scoreHome) || !Number.isInteger(scoreAway) || scoreHome < 0 || scoreAway < 0 || scoreHome > 9 || scoreAway > 9) {
+      return { error: "比分需要在 0-9 之间" };
+    }
+
+    const pick = scoreHome > scoreAway ? "home" : scoreHome < scoreAway ? "away" : "draw";
+    sanitizedEntries.push({
+      matchKey,
+      pick,
+      scoreHome,
+      scoreAway,
+      confidence: Math.min(100, Math.max(1, Number.parseInt(entry?.confidence, 10) || 70)),
+      spreadChoice: sanitizeChoice(entry?.spreadChoice, ["none", "follow", "avoid"], "none"),
+      totalChoice: sanitizeChoice(entry?.totalChoice, ["none", "over", "under"], "none"),
+      cornerChoice: sanitizeChoice(entry?.cornerChoice, ["none", "over", "under"], "none"),
+      riskChoice: sanitizeChoice(entry?.riskChoice, ["steady", "medium", "upset"], "medium"),
+    });
+  }
+
+  if (batchKeys.size !== 1) {
+    return { error: "一次只能提交同一天的比赛" };
+  }
+
+  const batchKey = [...batchKeys][0];
+  const batchMatches = matches.filter((match) => matchBatchKey(match) === batchKey);
+  const expectedKeys = new Set(batchMatches.map((match) => match.key || `${match.home}-${match.away}`));
+  if (sanitizedEntries.length !== expectedKeys.size || sanitizedEntries.some((entry) => !expectedKeys.has(entry.matchKey))) {
+    return { error: `请一次提交 ${expectedKeys.size} 场今日比赛` };
+  }
+
+  const ipKey = clientIpHash(request);
+  const timestamp = now.toISOString();
+  return {
+    prediction: {
+      id: `batch:${batchKey}:${ipKey}`,
+      batchKey,
+      ipKey,
+      nickname,
+      deviceId: String(input?.deviceId || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80) || "browser",
+      entries: sanitizedEntries,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+  };
+}
+
 function sanitizeChoice(value, allowed, fallback) {
   const choice = String(value || fallback);
   return allowed.includes(choice) ? choice : fallback;
@@ -137,12 +243,44 @@ function publicStrategy(prediction) {
   };
 }
 
+function publicBatchStrategies(prediction) {
+  if (!Array.isArray(prediction.entries)) return [];
+  return prediction.entries.map((entry) => ({
+    matchKey: entry.matchKey || "",
+    pick: entry.pick || "",
+    scoreHome: Number.isInteger(entry.scoreHome) ? entry.scoreHome : null,
+    scoreAway: Number.isInteger(entry.scoreAway) ? entry.scoreAway : null,
+    confidence: Number.isInteger(entry.confidence) ? entry.confidence : null,
+    spreadChoice: entry.spreadChoice || "none",
+    totalChoice: entry.totalChoice || "none",
+    cornerChoice: entry.cornerChoice || "none",
+    riskChoice: entry.riskChoice || "medium",
+  }));
+}
+
+export function batchScoreText(total, hits) {
+  return `${total}中${hits}`;
+}
+
+function predictionEntries(prediction) {
+  if (Array.isArray(prediction.entries)) {
+    return prediction.entries.map((entry) => ({
+      ...entry,
+      batchKey: prediction.batchKey,
+      nickname: prediction.nickname,
+      deviceId: prediction.deviceId,
+      updatedAt: prediction.updatedAt,
+    }));
+  }
+  return [prediction];
+}
+
 export function buildLeaderboard(predictions, matches) {
   const matchByKey = new Map(matches.map((match) => [match.key || `${match.home}-${match.away}`, match]));
   const byUser = new Map();
 
   for (const prediction of predictions) {
-    const key = `${prediction.deviceId}:${prediction.nickname}`;
+    const key = `${prediction.ipKey || prediction.deviceId}:${prediction.nickname}`;
     const user = byUser.get(key) || {
       nickname: prediction.nickname,
       deviceId: prediction.deviceId,
@@ -153,7 +291,8 @@ export function buildLeaderboard(predictions, matches) {
   }
 
   const rows = [...byUser.values()].map((user) => {
-    const completed = user.predictions
+    const flatPredictions = user.predictions.flatMap(predictionEntries);
+    const completed = flatPredictions
       .map((prediction) => {
         const match = matchByKey.get(prediction.matchKey);
         const result = predictionResult(match);
@@ -182,22 +321,34 @@ export function buildLeaderboard(predictions, matches) {
     const latest = user.predictions
       .slice()
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
+    const latestEntries = predictionEntries(latest || {});
+    const batchTotal = latestEntries.length;
+    const batchHits = latestEntries.filter((entry) => {
+      const match = matchByKey.get(entry.matchKey);
+      const result = predictionResult(match);
+      return result && entry.pick === result;
+    }).length;
 
     return {
       nickname: user.nickname,
       currentStreak,
       totalHits,
-      totalPredictions: user.predictions.length,
-      latestMatch: latest?.matchKey || "",
-      latestPick: latest?.pick || "",
-      latestStrategy: latest ? publicStrategy(latest) : null,
+      totalPredictions: flatPredictions.length,
+      batchKey: latest?.batchKey || latestEntries[0]?.batchKey || "",
+      batchHits,
+      batchTotal,
+      batchScoreText: batchScoreText(batchTotal, batchHits),
+      latestMatch: latest?.matchKey || latestEntries[0]?.matchKey || "",
+      latestPick: latest?.pick || latestEntries[0]?.pick || "",
+      latestStrategy: latest && !Array.isArray(latest.entries) ? publicStrategy(latest) : null,
+      latestStrategies: latest ? publicBatchStrategies(latest) : [],
       updatedAt: latest?.updatedAt || "",
     };
   });
 
   rows.sort((a, b) => {
+    if (b.batchHits !== a.batchHits) return b.batchHits - a.batchHits;
     if (b.currentStreak !== a.currentStreak) return b.currentStreak - a.currentStreak;
-    if (b.totalHits !== a.totalHits) return b.totalHits - a.totalHits;
     return String(b.updatedAt).localeCompare(String(a.updatedAt));
   });
 
@@ -205,18 +356,20 @@ export function buildLeaderboard(predictions, matches) {
     .slice()
     .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
     .slice(0, 8)
-    .map(({ nickname, matchKey, pick, scoreHome, scoreAway, confidence, spreadChoice, totalChoice, cornerChoice, riskChoice, updatedAt }) => ({
-      nickname,
-      matchKey,
-      pick,
-      scoreHome,
-      scoreAway,
-      confidence,
-      spreadChoice: spreadChoice || "none",
-      totalChoice: totalChoice || "none",
-      cornerChoice: cornerChoice || "none",
-      riskChoice: riskChoice || "medium",
-      updatedAt,
+    .map((prediction) => ({
+      nickname: prediction.nickname,
+      batchKey: prediction.batchKey || "",
+      entries: publicBatchStrategies(prediction),
+      matchKey: prediction.matchKey || prediction.entries?.[0]?.matchKey || "",
+      pick: prediction.pick || prediction.entries?.[0]?.pick || "",
+      scoreHome: prediction.scoreHome ?? prediction.entries?.[0]?.scoreHome,
+      scoreAway: prediction.scoreAway ?? prediction.entries?.[0]?.scoreAway,
+      confidence: prediction.confidence ?? prediction.entries?.[0]?.confidence,
+      spreadChoice: prediction.spreadChoice || prediction.entries?.[0]?.spreadChoice || "none",
+      totalChoice: prediction.totalChoice || prediction.entries?.[0]?.totalChoice || "none",
+      cornerChoice: prediction.cornerChoice || prediction.entries?.[0]?.cornerChoice || "none",
+      riskChoice: prediction.riskChoice || prediction.entries?.[0]?.riskChoice || "medium",
+      updatedAt: prediction.updatedAt,
     }));
 
   return {

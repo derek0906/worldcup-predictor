@@ -545,30 +545,12 @@ const elements = {
   predictionPanel: $("#predictionPanel"),
   predictionForm: $("#predictionForm"),
   nicknameInput: $("#nicknameInput"),
-  pickHomeButton: $("#pickHomeButton"),
-  pickAwayButton: $("#pickAwayButton"),
-  scoreHomeInput: $("#scoreHomeInput"),
-  scoreAwayInput: $("#scoreAwayInput"),
-  confidenceInput: $("#confidenceInput"),
-  confidenceValue: $("#confidenceValue"),
-  spreadChoice: $("#spreadChoice"),
-  totalChoice: $("#totalChoice"),
-  cornerChoice: $("#cornerChoice"),
-  riskChoice: $("#riskChoice"),
   submitPredictionButton: $("#submitPredictionButton"),
-  copyMyPredictionButton: $("#copyMyPredictionButton"),
   copyMultiStrategyButton: $("#copyMultiStrategyButton"),
+  shareTextFallback: $("#shareTextFallback"),
   multiScorePanel: $("#multiScorePanel"),
   multiScoreList: $("#multiScoreList"),
   multiScoreMeta: $("#multiScoreMeta"),
-  strategyMain: $("#strategyMain"),
-  strategyTitle: $("#strategyTitle"),
-  strategyPick: $("#strategyPick"),
-  strategyScore: $("#strategyScore"),
-  strategyConfidence: $("#strategyConfidence"),
-  strategyReason: $("#strategyReason"),
-  strategyRisk: $("#strategyRisk"),
-  strategyEdge: $("#strategyEdge"),
   predictionComparison: $("#predictionComparison"),
   predictionNotice: $("#predictionNotice"),
   funTags: $("#funTags"),
@@ -586,6 +568,7 @@ let leaderboardCache = { rows: [], recent: [], note: "娱乐榜单，非严格�
 
 const DEVICE_ID_KEY = "worldcupPredictorDeviceId";
 const PREDICTION_DRAFTS_KEY = "worldcupPredictorDrafts";
+const PREDICTION_NICKNAME_KEY = "worldcupPredictorNickname";
 const SHARE_SITE_URL = "https://storied-blini-c17d9b.netlify.app/";
 
 function storageGet(key, fallback) {
@@ -1181,30 +1164,6 @@ function buildStrategyCard(match, result, draft) {
   return buildExpandedStrategyCard(match, result, draft);
 }
 
-function renderStrategyCard(match, result, draft) {
-  const strategy = buildStrategyCard(match, result, draft);
-  elements.strategyTitle.textContent = strategy.title;
-  elements.strategyPick.textContent = strategy.pickLabel;
-  elements.strategyScore.textContent = strategy.score;
-  elements.strategyConfidence.textContent = strategy.confidence;
-  elements.strategyReason.textContent = strategy.reason;
-  elements.strategyRisk.textContent = strategy.risk;
-  elements.strategyEdge.textContent = strategy.edge;
-  elements.strategyMain.innerHTML = [
-    ["胜平负策略", strategy.winStrategy],
-    ["让球/大小球策略", `${strategy.spreadStrategy}；${strategy.totalsStrategy}`],
-    ["波胆策略", strategy.scoreStrategy],
-    ["开球/角球策略", `${strategy.kickoffStrategy}；${strategy.cornerStrategy}`],
-  ]
-    .map(([label, value]) => `
-      <div>
-        <span>${label}</span>
-        <strong>${value}</strong>
-      </div>
-    `)
-    .join("");
-}
-
 function buildBettingRadar(match, result) {
   const market = marketOddsCache[matchCacheKey(match)];
   const model = modelPick(result);
@@ -1369,7 +1328,7 @@ function currentDraft(match, result) {
   const key = matchCacheKey(match);
   if (drafts[key]) return drafts[key];
   return {
-    nickname: "",
+    nickname: storageGet(PREDICTION_NICKNAME_KEY, ""),
     pick: modelPick(result),
     scoreHome: result.homeGoals,
     scoreAway: result.awayGoals,
@@ -1381,23 +1340,6 @@ function currentDraft(match, result) {
   };
 }
 
-function saveCurrentDraft(match) {
-  const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
-  drafts[matchCacheKey(match)] = {
-    nickname: elements.nicknameInput.value.trim(),
-    pick: state.userPick,
-    scoreHome: Number(elements.scoreHomeInput.value || 0),
-    scoreAway: Number(elements.scoreAwayInput.value || 0),
-    confidence: Number(elements.confidenceInput.value || 70),
-    spreadChoice: elements.spreadChoice.value,
-    totalChoice: elements.totalChoice.value,
-    cornerChoice: elements.cornerChoice.value,
-    riskChoice: elements.riskChoice.value,
-  };
-  storageSet(PREDICTION_DRAFTS_KEY, drafts);
-  return drafts[matchCacheKey(match)];
-}
-
 function updateDraftForMatch(match, updates) {
   const result = predict(match);
   const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
@@ -1405,6 +1347,7 @@ function updateDraftForMatch(match, updates) {
   drafts[key] = {
     ...currentDraft(match, result),
     ...(drafts[key] || {}),
+    nickname: elements.nicknameInput.value.trim() || storageGet(PREDICTION_NICKNAME_KEY, ""),
     ...updates,
   };
   storageSet(PREDICTION_DRAFTS_KEY, drafts);
@@ -1418,37 +1361,24 @@ function renderFunTags(match, result) {
     .join("");
 }
 
-function renderPickButtons(result) {
-  elements.pickHomeButton.textContent = result.home.name;
-  elements.pickAwayButton.textContent = result.away.name;
-  $$(".pick-button").forEach((button) => {
-    button.classList.toggle("selected", button.dataset.pick === state.userPick);
-  });
-}
-
 function renderPredictionForm(match, result) {
   const draft = currentDraft(match, result);
   state.userPick = draft.pick || modelPick(result);
 
-  elements.nicknameInput.value = draft.nickname || "";
-  elements.scoreHomeInput.value = String(draft.scoreHome ?? result.homeGoals);
-  elements.scoreAwayInput.value = String(draft.scoreAway ?? result.awayGoals);
-  elements.confidenceInput.value = String(draft.confidence ?? 70);
-  elements.spreadChoice.value = draft.spreadChoice || "none";
-  elements.totalChoice.value = draft.totalChoice || "none";
-  elements.cornerChoice.value = draft.cornerChoice || "none";
-  elements.riskChoice.value = draft.riskChoice || "medium";
-  elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
-  renderPickButtons(result);
-  renderStrategyCard(match, result, draft);
-  elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
+  if (!elements.nicknameInput.value) {
+    elements.nicknameInput.value = draft.nickname || storageGet(PREDICTION_NICKNAME_KEY, "");
+  }
 
-  const locked = hasKickedOff(match);
+  const selection = multiStrategySelection();
+  const locked = isMultiScoreLocked(selection.matches);
   elements.submitPredictionButton.disabled = locked;
-  elements.submitPredictionButton.textContent = locked ? "已开球，停止提交" : "提交到连红榜";
+  elements.submitPredictionButton.textContent = locked ? "已开球，停止上传" : "提交今日战绩到榜单";
+  elements.predictionComparison.textContent = selection.matches.length
+    ? `今日这张票共 ${selection.matches.length} 场，榜单会按 ${selection.matches.length}中几 排名。`
+    : "暂无可提交的今日比赛。";
   elements.predictionNotice.textContent = locked
-    ? "这场已经开球或完赛，只能回看，不能再提交预测。"
-    : "提交后会进入朋友连红榜；无登录版本只做娱乐记录。";
+    ? "今日批次里已有比赛开球，停止上传，防止赛后刷榜。"
+    : "同一个 IP 对今日这张票只能提交一次；提交后不能覆盖。";
 }
 
 function formatLeaderboardTime(value) {
@@ -1497,8 +1427,8 @@ function renderLeaderboard(data = leaderboardCache, mode = "online") {
         <div class="leaderboard-row">
           <span class="rank">${index + 1}</span>
           <strong>${escapeHtml(row.nickname)}</strong>
+          <span>${escapeHtml(row.batchScoreText || batchScoreText(row))}</span>
           <span>连红 ${row.currentStreak}</span>
-          <span>${row.totalHits}/${row.totalPredictions}</span>
           <button class="strategy-view-button" type="button">看策略</button>
         </div>
         ${renderLeaderboardStrategy(row)}
@@ -1517,7 +1447,34 @@ function renderLeaderboard(data = leaderboardCache, mode = "online") {
   });
 }
 
+function batchScoreText(row) {
+  const total = Number(row.batchTotal || row.totalPredictions || 0);
+  const hits = Number(row.batchHits || row.totalHits || 0);
+  return `${total}中${hits}`;
+}
+
 function renderLeaderboardStrategy(row) {
+  if (Array.isArray(row.latestStrategies) && row.latestStrategies.length > 0) {
+    const details = row.latestStrategies.map((strategy) => {
+      const match = matches.find((item) => matchCacheKey(item) === strategy.matchKey);
+      const result = match ? predict(match) : null;
+      const matchName = match && result ? `${result.home.name} vs ${result.away.name}` : strategy.matchKey || "未知比赛";
+      const pick = result ? pickLabel(strategy.pick, result) : strategy.pick || "未选择";
+      const score = Number.isInteger(strategy.scoreHome) && Number.isInteger(strategy.scoreAway)
+        ? `${strategy.scoreHome}-${strategy.scoreAway}`
+        : "未填写";
+      return `${matchName}｜方向 ${pick}｜波胆 ${score}`;
+    });
+
+    return `
+      <div class="leaderboard-strategy" hidden>
+        <strong>${escapeHtml(row.batchScoreText || batchScoreText(row))} · ${escapeHtml(row.batchKey || "今日票")}</strong>
+        <p>${details.map(escapeHtml).join("<br />")}</p>
+        <small>来这里生成你的策略：${SHARE_SITE_URL}</small>
+      </div>
+    `;
+  }
+
   const strategy = row.latestStrategy;
   if (!strategy) {
     return `<div class="leaderboard-strategy" hidden>暂无可查看策略。</div>`;
@@ -1559,26 +1516,52 @@ async function loadLeaderboard() {
   }
 }
 
-async function submitPrediction(match) {
-  const draft = saveCurrentDraft(match);
-  if (!draft.nickname) {
-    elements.predictionNotice.textContent = "先填一个昵称，朋友才知道是谁在连红。";
+function buildPredictionBatchPayload() {
+  const nickname = elements.nicknameInput.value.trim();
+  const selected = multiStrategyMatches();
+  const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
+  return {
+    nickname,
+    deviceId: deviceId(),
+    entries: selected.map((match) => {
+      const result = predict(match);
+      const draft = drafts[matchCacheKey(match)] || currentDraft(match, result);
+      const scoreHome = Number(draft.scoreHome ?? result.homeGoals);
+      const scoreAway = Number(draft.scoreAway ?? result.awayGoals);
+      return {
+        matchKey: matchCacheKey(match),
+        pick: finalPickFromScore(scoreHome, scoreAway),
+        scoreHome,
+        scoreAway,
+        confidence: Number(draft.confidence || 70),
+        spreadChoice: draft.spreadChoice || "none",
+        totalChoice: draft.totalChoice || "none",
+        cornerChoice: draft.cornerChoice || "none",
+        riskChoice: draft.riskChoice || "medium",
+      };
+    }),
+  };
+}
+
+function isMultiScoreLocked(selected = multiStrategyMatches()) {
+  return selected.length === 0 || selected.some((match) => hasKickedOff(match));
+}
+
+async function submitPredictionBatch() {
+  const payload = buildPredictionBatchPayload();
+  if (!payload.nickname) {
+    elements.predictionNotice.textContent = "先填一个昵称，朋友才知道这张票是谁的。";
     return;
   }
 
-  const payload = {
-    matchKey: matchCacheKey(match),
-    nickname: draft.nickname,
-    deviceId: deviceId(),
-    pick: draft.pick,
-    scoreHome: draft.scoreHome,
-    scoreAway: draft.scoreAway,
-    confidence: draft.confidence,
-    spreadChoice: draft.spreadChoice,
-    totalChoice: draft.totalChoice,
-    cornerChoice: draft.cornerChoice,
-    riskChoice: draft.riskChoice,
-  };
+  const selected = multiStrategyMatches();
+  if (isMultiScoreLocked(selected)) {
+    elements.predictionNotice.textContent = "今日批次里已有比赛开球，停止上传，防止赛后刷榜。";
+    renderPredictionForm(matches[state.matchIndex], predict(matches[state.matchIndex]));
+    return;
+  }
+
+  storageSet(PREDICTION_NICKNAME_KEY, payload.nickname);
 
   try {
     const response = await fetch("/.netlify/functions/predictions", {
@@ -1589,35 +1572,16 @@ async function submitPrediction(match) {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "提交失败");
     renderLeaderboard(data.leaderboard);
-    elements.predictionNotice.textContent = "已提交到连红榜。比赛完赛后会自动计算是否命中。";
+    elements.predictionNotice.textContent = `已提交到连红榜：今日 ${payload.entries.length} 场，只能提交这一次。`;
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     elements.predictionNotice.textContent = message
-      ? `提交失败：${message}。你的预测已保留在本地，稍后可以再试。`
-      : "提交失败：榜单服务暂时连不上。你的预测已保留在本地，稍后可以再试。";
-    renderLeaderboard({ rows: [], recent: [], note: "当前为本地模式：公开榜单部署后可用。" }, "local");
+      ? `提交失败：${message}。`
+      : "提交失败：榜单服务暂时连不上，稍后可以再试。";
+    if (!message.includes("已经提交")) {
+      renderLeaderboard({ rows: [], recent: [], note: "当前为本地模式：公开榜单部署后可用。" }, "local");
+    }
   }
-}
-
-function buildMyPredictionShare(match, result) {
-  const draft = saveCurrentDraft(match);
-  const strategy = buildStrategyCard(match, result, draft);
-  const homeName = result.home.name;
-  const awayName = result.away.name;
-  return [
-    `我的世界杯下注策略卡：${homeName} vs ${awayName}`,
-    strategy.userChoice,
-    `我的主策略：${strategy.title}`,
-    strategy.winStrategy,
-    `${strategy.spreadStrategy}；${strategy.totalsStrategy}`,
-    strategy.scoreStrategy,
-    `${strategy.kickoffStrategy}；${strategy.cornerStrategy}`,
-    strategy.risk,
-    strategy.edge,
-    `策略理由：${strategy.reason}`,
-    `来这里生成你的策略：${SHARE_SITE_URL}`,
-    "仅供朋友局娱乐，不构成投注建议。",
-  ].join("\n");
 }
 
 function sameChinaDate(match, now = new Date()) {
@@ -1820,13 +1784,20 @@ function buildMultiMatchStrategyShare() {
   const steadyCount = rows.filter((row) => row.risk.includes("中低") || row.edge.includes("稳健")).length;
   const upsetCount = rows.filter((row) => row.title.includes("冷门") || row.edge.includes("分歧")).length;
   const cornerHotCount = rows.filter((row) => row.cornerStrategy.includes("大角偏热")).length;
-  const summary = `今日策略：${steadyCount}场稳胆，${upsetCount}场冷门观察，角球偏大${cornerHotCount}场。`;
+  const summary = `今日多场策略：${steadyCount}场稳胆，${upsetCount}场冷门观察，角球偏大${cornerHotCount}场。`;
   return [
     summary,
     ...rows.map((row) => row.compact),
     `来这里生成你的策略：${SHARE_SITE_URL}`,
     "仅供朋友局娱乐，不构成投注建议。",
   ].join("\n");
+}
+
+function showShareTextFallback(text) {
+  elements.shareTextFallback.hidden = false;
+  elements.shareTextFallback.value = text;
+  elements.shareTextFallback.focus();
+  elements.shareTextFallback.select();
 }
 
 async function copyText(text) {
@@ -2090,44 +2061,9 @@ async function init() {
     render();
   });
 
-  $$(".pick-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.userPick = button.dataset.pick;
-      const match = matches[state.matchIndex];
-      const result = predict(match);
-      const draft = saveCurrentDraft(match);
-      renderPickButtons(result);
-      renderStrategyCard(match, result, draft);
-      elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
-    });
-  });
-
-  [
-    elements.nicknameInput,
-    elements.scoreHomeInput,
-    elements.scoreAwayInput,
-    elements.confidenceInput,
-    elements.spreadChoice,
-    elements.totalChoice,
-    elements.cornerChoice,
-    elements.riskChoice,
-  ].forEach((input) => {
-    input.addEventListener("input", () => {
-      const match = matches[state.matchIndex];
-      const result = predict(match);
-      const draft = saveCurrentDraft(match);
-      elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
-      renderStrategyCard(match, result, draft);
-      elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
-    });
-    input.addEventListener("change", () => {
-      const match = matches[state.matchIndex];
-      const result = predict(match);
-      const draft = saveCurrentDraft(match);
-      elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
-      renderStrategyCard(match, result, draft);
-      elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
-    });
+  elements.nicknameInput.addEventListener("input", () => {
+    storageSet(PREDICTION_NICKNAME_KEY, elements.nicknameInput.value.trim());
+    multiStrategyMatches().forEach((match) => updateDraftForMatch(match, {}));
   });
 
   elements.multiScoreList.addEventListener("input", handleMultiScoreInput);
@@ -2135,29 +2071,19 @@ async function init() {
 
   elements.predictionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const match = matches[state.matchIndex];
-    await submitPrediction(match);
-  });
-
-  elements.copyMyPredictionButton.addEventListener("click", async () => {
-    const match = matches[state.matchIndex];
-    const result = predict(match);
-    try {
-      await copyText(buildMyPredictionShare(match, result));
-      elements.toast.classList.add("show");
-      setTimeout(() => elements.toast.classList.remove("show"), 1300);
-    } catch {
-      elements.predictionNotice.textContent = "复制失败，可以手动截图分享。";
-    }
+    await submitPredictionBatch();
   });
 
   elements.copyMultiStrategyButton.addEventListener("click", async () => {
+    const text = buildMultiMatchStrategyShare();
     try {
-      await copyText(buildMultiMatchStrategyShare());
+      await copyText(text);
+      elements.shareTextFallback.hidden = true;
       elements.toast.classList.add("show");
       setTimeout(() => elements.toast.classList.remove("show"), 1300);
     } catch {
-      elements.predictionNotice.textContent = "复制失败，可以手动选择多场策略文字。";
+      showShareTextFallback(text);
+      elements.predictionNotice.textContent = "复制失败，已把策略文字展开在下方，可以手动全选复制。";
     }
   });
 
