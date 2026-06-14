@@ -6,6 +6,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { spawnSync } from "node:child_process";
 
 const appSource = await readFile("app.js", "utf8");
+const indexSource = await readFile("index.html", "utf8");
 const marketOdds = JSON.parse(await readFile("data/market-odds.json", "utf8"));
 const realMatches = JSON.parse(await readFile("data/matches.json", "utf8"));
 const teamRatings = JSON.parse(await readFile("data/team-ratings.json", "utf8"));
@@ -20,6 +21,13 @@ assert.match(appSource, /Array\.isArray\(market\.correctScore\)/, "market render
 assert.match(appSource, /market\.corners &&/, "market rendering should tolerate missing corners");
 assert.match(appSource, /loadRealDataCache/, "frontend should try to load real data cache");
 assert.match(appSource, /applyRealDataCache/, "frontend should apply real data before rendering");
+assert.match(indexSource, /id="predictionPanel"/, "index.html should include prediction panel");
+assert.match(indexSource, /id="leaderboardRows"/, "index.html should include leaderboard rows");
+assert.match(appSource, /loadLeaderboard/, "app.js should load shared leaderboard");
+assert.match(appSource, /submitPrediction/, "app.js should submit user predictions");
+assert.match(appSource, /buildFunTags/, "app.js should render fun tags");
+assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /getStore/, "leaderboard storage should use Netlify Blobs");
+assert.match(await readFile("netlify/functions/predictions.mjs", "utf8"), /predictions/, "predictions function should persist predictions");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /FOOTBALL_DATA_API_KEY/, "real data updater should support football-data.org");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /TEAM_RATINGS_SOURCE_URL/, "real data updater should support external rating input");
 

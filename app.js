@@ -409,9 +409,11 @@ const kickoffHistory = {
 
 const state = {
   matchIndex: 0,
+  userPick: "home",
 };
 
 const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
 const elements = {
   matchSelect: $("#matchSelect"),
@@ -467,12 +469,65 @@ const elements = {
   verdictTitle: $("#verdictTitle"),
   verdictCopy: $("#verdictCopy"),
   copyButton: $("#copyButton"),
+  predictionPanel: $("#predictionPanel"),
+  predictionForm: $("#predictionForm"),
+  nicknameInput: $("#nicknameInput"),
+  pickHomeButton: $("#pickHomeButton"),
+  pickAwayButton: $("#pickAwayButton"),
+  scoreHomeInput: $("#scoreHomeInput"),
+  scoreAwayInput: $("#scoreAwayInput"),
+  confidenceInput: $("#confidenceInput"),
+  confidenceValue: $("#confidenceValue"),
+  submitPredictionButton: $("#submitPredictionButton"),
+  copyMyPredictionButton: $("#copyMyPredictionButton"),
+  predictionComparison: $("#predictionComparison"),
+  predictionNotice: $("#predictionNotice"),
+  funTags: $("#funTags"),
+  leaderboardStatus: $("#leaderboardStatus"),
+  leaderboardRows: $("#leaderboardRows"),
+  leaderboardUpdated: $("#leaderboardUpdated"),
+  leaderboardNote: $("#leaderboardNote"),
   toast: $("#toast"),
 };
 
 let latestPayload = null;
 let aiAnalysisCache = {};
 let marketOddsCache = {};
+let leaderboardCache = { rows: [], recent: [], note: "娱乐榜单，非严格防作弊。" };
+
+const DEVICE_ID_KEY = "worldcupPredictorDeviceId";
+const PREDICTION_DRAFTS_KEY = "worldcupPredictorDrafts";
+
+function storageGet(key, fallback) {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function storageSet(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Keep the form usable even if storage is blocked.
+  }
+}
+
+function deviceId() {
+  let id = "";
+  try {
+    id = localStorage.getItem(DEVICE_ID_KEY) || "";
+    if (!id) {
+      id = `fan-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+  } catch {
+    id = "fan-local";
+  }
+  return id;
+}
 
 function applyRealDataCache(realData) {
   const realMatches = Array.isArray(realData.matches?.matches) ? realData.matches.matches : [];
@@ -720,6 +775,82 @@ function trendText(result) {
   return "节奏偏开放，推荐盯前二十分钟";
 }
 
+function modelPick(result) {
+  if (!result.winner) return "draw";
+  return result.winner === result.home ? "home" : "away";
+}
+
+function pickLabel(pick, result) {
+  if (pick === "home") return result.home.name;
+  if (pick === "away") return result.away.name;
+  return "平局";
+}
+
+function finalPickFromScore(home, away) {
+  if (home > away) return "home";
+  if (home < away) return "away";
+  return "draw";
+}
+
+function hasKickedOff(match) {
+  if (!match.kickoffAt) return false;
+  return new Date(match.kickoffAt).getTime() <= Date.now();
+}
+
+function buildPredictionComparison(match, result, draft) {
+  if (!draft) return "先选一个方向，看看你和模型是不是同路。";
+
+  const model = modelPick(result);
+  const userPick = draft.pick || finalPickFromScore(Number(draft.scoreHome), Number(draft.scoreAway));
+  const scoreClose =
+    Math.abs(Number(draft.scoreHome) - result.homeGoals) + Math.abs(Number(draft.scoreAway) - result.awayGoals) <= 1;
+
+  if (match.status === "final" && match.result) {
+    const actual = finalPickFromScore(match.result.home, match.result.away);
+    return userPick === actual
+      ? `这场你猜中了方向，赛果是 ${match.result.home}-${match.result.away}。`
+      : `这场方向没中，赛果是 ${match.result.home}-${match.result.away}。`;
+  }
+
+  if (userPick === model && scoreClose) {
+    return `同路而且比分接近模型，${pickLabel(userPick, result)}方向很有共识。`;
+  }
+
+  if (userPick === model) {
+    return `同路，模型也支持${pickLabel(userPick, result)}方向；比分上你比模型更有想象力。`;
+  }
+
+  const modelProb = model === "home" ? result.homeProb : model === "away" ? result.awayProb : result.drawProb;
+  const userProb = userPick === "home" ? result.homeProb : userPick === "away" ? result.awayProb : result.drawProb;
+  return userProb < modelProb
+    ? `你在押一个更冷门的方向：${pickLabel(userPick, result)}。朋友局效果拉满。`
+    : `你和模型分歧明显，模型更偏 ${pickLabel(model, result)}，你更看好 ${pickLabel(userPick, result)}。`;
+}
+
+function buildFunTags(match, result) {
+  const tags = [];
+  const maxProb = Math.max(result.homeProb, result.drawProb, result.awayProb);
+  const market = marketOddsCache[matchCacheKey(match)];
+
+  if (result.upsetProb >= 35) tags.push({ text: "爆冷警报", tone: "hot" });
+  if (maxProb >= 60) tags.push({ text: "模型偏一边", tone: "steady" });
+  if (result.drawProb >= 30) tags.push({ text: "平局味很浓", tone: "draw" });
+  if (result.homeGoals + result.awayGoals >= 4) tags.push({ text: "进球大战倾向", tone: "goals" });
+  if (market?.winner) {
+    const implied = {
+      home: impliedProbability(market.winner.home),
+      draw: impliedProbability(market.winner.draw),
+      away: impliedProbability(market.winner.away),
+    };
+    const marketTop = Object.entries(implied).sort((a, b) => b[1] - a[1])[0][0];
+    if (marketTop !== modelPick(result)) tags.push({ text: "模型市场分歧", tone: "split" });
+    if (Math.max(...Object.values(implied)) >= 70) tags.push({ text: "赔率一边倒", tone: "market" });
+  }
+  if (match.status === "final") tags.push({ text: "赛前模型回看", tone: "final" });
+
+  return tags.slice(0, 5);
+}
+
 function verdictText(result) {
   if (!result.winner) {
     return {
@@ -819,6 +950,162 @@ function buildAnalysisPayload(match, result, verdict, analysis) {
       upset: analysis.upsetReason,
     },
   };
+}
+
+function currentDraft(match, result) {
+  const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
+  const key = matchCacheKey(match);
+  if (drafts[key]) return drafts[key];
+  return {
+    nickname: "",
+    pick: modelPick(result),
+    scoreHome: result.homeGoals,
+    scoreAway: result.awayGoals,
+    confidence: 70,
+  };
+}
+
+function saveCurrentDraft(match) {
+  const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
+  drafts[matchCacheKey(match)] = {
+    nickname: elements.nicknameInput.value.trim(),
+    pick: state.userPick,
+    scoreHome: Number(elements.scoreHomeInput.value || 0),
+    scoreAway: Number(elements.scoreAwayInput.value || 0),
+    confidence: Number(elements.confidenceInput.value || 70),
+  };
+  storageSet(PREDICTION_DRAFTS_KEY, drafts);
+  return drafts[matchCacheKey(match)];
+}
+
+function renderFunTags(match, result) {
+  const tags = buildFunTags(match, result);
+  elements.funTags.innerHTML = tags
+    .map((tag) => `<span class="fun-tag ${tag.tone}">${tag.text}</span>`)
+    .join("");
+}
+
+function renderPickButtons(result) {
+  elements.pickHomeButton.textContent = result.home.name;
+  elements.pickAwayButton.textContent = result.away.name;
+  $$(".pick-button").forEach((button) => {
+    button.classList.toggle("selected", button.dataset.pick === state.userPick);
+  });
+}
+
+function renderPredictionForm(match, result) {
+  const draft = currentDraft(match, result);
+  state.userPick = draft.pick || modelPick(result);
+
+  elements.nicknameInput.value = draft.nickname || "";
+  elements.scoreHomeInput.value = String(draft.scoreHome ?? result.homeGoals);
+  elements.scoreAwayInput.value = String(draft.scoreAway ?? result.awayGoals);
+  elements.confidenceInput.value = String(draft.confidence ?? 70);
+  elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
+  renderPickButtons(result);
+  elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
+
+  const locked = hasKickedOff(match);
+  elements.submitPredictionButton.disabled = locked;
+  elements.submitPredictionButton.textContent = locked ? "已开球，停止提交" : "提交到连红榜";
+  elements.predictionNotice.textContent = locked
+    ? "这场已经开球或完赛，只能回看，不能再提交预测。"
+    : "提交后会进入朋友连红榜；无登录版本只做娱乐记录。";
+}
+
+function formatLeaderboardTime(value) {
+  if (!value) return "刚刚";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "刚刚";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+  }).format(date);
+}
+
+function renderLeaderboard(data = leaderboardCache, mode = "online") {
+  leaderboardCache = data;
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  elements.leaderboardStatus.textContent = mode === "local" ? "本地模式" : "榜单已更新";
+  elements.leaderboardUpdated.textContent = data.updatedAt ? formatLeaderboardTime(data.updatedAt) : "娱乐榜";
+  elements.leaderboardNote.textContent = data.note || "娱乐榜单，非严格防作弊。";
+
+  if (rows.length === 0) {
+    elements.leaderboardRows.innerHTML = `
+      <div class="leaderboard-empty">
+        还没有上榜记录。抢一个首预测，朋友来了就有东西可以追。
+      </div>
+    `;
+    return;
+  }
+
+  elements.leaderboardRows.innerHTML = rows
+    .slice(0, 8)
+    .map((row, index) => `
+      <div class="leaderboard-row">
+        <span class="rank">${index + 1}</span>
+        <strong>${row.nickname}</strong>
+        <span>连红 ${row.currentStreak}</span>
+        <span>${row.totalHits}/${row.totalPredictions}</span>
+      </div>
+    `)
+    .join("");
+}
+
+async function loadLeaderboard() {
+  try {
+    const response = await fetch("/.netlify/functions/leaderboard", { cache: "no-store" });
+    if (!response.ok) throw new Error("leaderboard unavailable");
+    renderLeaderboard(await response.json());
+  } catch {
+    renderLeaderboard({ rows: [], recent: [], note: "当前为本地模式：公开榜单部署后可用。" }, "local");
+  }
+}
+
+async function submitPrediction(match) {
+  const draft = saveCurrentDraft(match);
+  if (!draft.nickname) {
+    elements.predictionNotice.textContent = "先填一个昵称，朋友才知道是谁在连红。";
+    return;
+  }
+
+  const payload = {
+    matchKey: matchCacheKey(match),
+    nickname: draft.nickname,
+    deviceId: deviceId(),
+    pick: draft.pick,
+    scoreHome: draft.scoreHome,
+    scoreAway: draft.scoreAway,
+    confidence: draft.confidence,
+  };
+
+  try {
+    const response = await fetch("/.netlify/functions/predictions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "提交失败");
+    renderLeaderboard(data.leaderboard);
+    elements.predictionNotice.textContent = "已提交到连红榜。比赛完赛后会自动计算是否命中。";
+  } catch (error) {
+    elements.predictionNotice.textContent =
+      error instanceof Error ? `提交失败：${error.message}` : "提交失败，已保留在本地草稿。";
+    renderLeaderboard({ rows: [], recent: [], note: "当前为本地模式：公开榜单部署后可用。" }, "local");
+  }
+}
+
+function buildMyPredictionShare(match, result) {
+  const draft = saveCurrentDraft(match);
+  const side = pickLabel(draft.pick, result);
+  const homeName = result.home.name;
+  const awayName = result.away.name;
+  return `我的世界杯预测：${homeName} vs ${awayName}\n我看好：${side}\n比分：${draft.scoreHome}-${draft.scoreAway}\n信心：${draft.confidence}%\n模型推荐：${result.homeGoals}-${result.awayGoals}，${topPickText(result)}\n${buildPredictionComparison(match, result, draft)}`;
 }
 
 function localAiFallback(payload) {
@@ -1007,6 +1294,8 @@ function render() {
   elements.swingCopy.textContent = watch.swingCopy;
   elements.friendTitle.textContent = watch.friendTitle;
   elements.friendCopy.textContent = watch.friendCopy;
+  renderFunTags(match, result);
+  renderPredictionForm(match, result);
   renderMarket(match, result);
 
   elements.confidenceBadge.textContent = analysis.confidence;
@@ -1046,6 +1335,50 @@ async function init() {
 
   $("#predictButton").addEventListener("click", render);
 
+  $$(".pick-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.userPick = button.dataset.pick;
+      const match = matches[state.matchIndex];
+      const result = predict(match);
+      const draft = saveCurrentDraft(match);
+      renderPickButtons(result);
+      elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
+    });
+  });
+
+  [
+    elements.nicknameInput,
+    elements.scoreHomeInput,
+    elements.scoreAwayInput,
+    elements.confidenceInput,
+  ].forEach((input) => {
+    input.addEventListener("input", () => {
+      const match = matches[state.matchIndex];
+      const result = predict(match);
+      const draft = saveCurrentDraft(match);
+      elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
+      elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
+    });
+  });
+
+  elements.predictionForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const match = matches[state.matchIndex];
+    await submitPrediction(match);
+  });
+
+  elements.copyMyPredictionButton.addEventListener("click", async () => {
+    const match = matches[state.matchIndex];
+    const result = predict(match);
+    try {
+      await navigator.clipboard.writeText(buildMyPredictionShare(match, result));
+      elements.toast.classList.add("show");
+      setTimeout(() => elements.toast.classList.remove("show"), 1300);
+    } catch {
+      elements.predictionNotice.textContent = "复制失败，可以手动截图分享。";
+    }
+  });
+
   elements.copyButton.addEventListener("click", async () => {
     const share = `${elements.verdictTitle.textContent}\n${elements.verdictCopy.textContent}\n爆冷概率：${elements.upsetProb.textContent}（${elements.upsetLabel.textContent}）\n开球方习惯预测：${elements.kickoffTeam.textContent}\n\n${elements.aiSummary.textContent}`;
     try {
@@ -1060,6 +1393,7 @@ async function init() {
     }
   });
 
+  await loadLeaderboard();
   render();
 }
 

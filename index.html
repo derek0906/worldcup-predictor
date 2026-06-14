@@ -134,6 +134,69 @@
         </div>
       </section>
 
+      <section id="predictionPanel" class="prediction-panel" aria-label="我的预测与连红榜">
+        <div class="prediction-header">
+          <div>
+            <p class="card-label">朋友局互动</p>
+            <h2>我的预测 & 连红榜</h2>
+          </div>
+          <span id="leaderboardStatus" class="cache-pill">正在读取榜单</span>
+        </div>
+
+        <div id="funTags" class="fun-tags" aria-label="趣味标签"></div>
+
+        <div class="prediction-layout">
+          <form id="predictionForm" class="prediction-form">
+            <label class="prediction-field">
+              <span>昵称</span>
+              <input id="nicknameInput" type="text" maxlength="18" placeholder="比如 Derek" autocomplete="nickname" />
+            </label>
+
+            <div class="prediction-field">
+              <span>你看好谁</span>
+              <div class="pick-buttons" role="group" aria-label="选择胜平负">
+                <button class="pick-button" data-pick="home" type="button" id="pickHomeButton"></button>
+                <button class="pick-button" data-pick="draw" type="button">平局</button>
+                <button class="pick-button" data-pick="away" type="button" id="pickAwayButton"></button>
+              </div>
+            </div>
+
+            <div class="score-confidence-grid">
+              <label class="prediction-field">
+                <span>预测比分</span>
+                <div class="score-inputs">
+                  <input id="scoreHomeInput" type="number" min="0" max="9" inputmode="numeric" />
+                  <strong>:</strong>
+                  <input id="scoreAwayInput" type="number" min="0" max="9" inputmode="numeric" />
+                </div>
+              </label>
+
+              <label class="prediction-field">
+                <span>信心值 <strong id="confidenceValue">70%</strong></span>
+                <input id="confidenceInput" type="range" min="1" max="100" value="70" />
+              </label>
+            </div>
+
+            <div class="prediction-actions">
+              <button id="submitPredictionButton" class="primary-button" type="submit">提交到连红榜</button>
+              <button id="copyMyPredictionButton" class="secondary-button" type="button">复制我的预测</button>
+            </div>
+
+            <p id="predictionComparison" class="prediction-comparison"></p>
+            <p id="predictionNotice" class="market-note"></p>
+          </form>
+
+          <aside class="leaderboard-card" aria-label="连红排行榜">
+            <div class="market-card-head">
+              <span>连红排行榜</span>
+              <strong id="leaderboardUpdated">娱乐榜</strong>
+            </div>
+            <div id="leaderboardRows" class="leaderboard-rows"></div>
+            <p id="leaderboardNote" class="market-note">娱乐榜单，非严格防作弊。</p>
+          </aside>
+        </div>
+      </section>
+
       <section class="market-panel" aria-label="市场赔率观察">
         <div class="market-header">
           <div>

@@ -4,5 +4,8 @@
     "update:real-data": "node scripts/update-real-data.mjs",
     "update:odds": "node scripts/update-market-odds.mjs"
   },
+  "dependencies": {
+    "@netlify/blobs": "latest"
+  },
   "devDependencies": {}
 }

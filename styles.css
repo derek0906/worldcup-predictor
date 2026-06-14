@@ -450,6 +450,222 @@ select {
   padding: 20px 22px;
 }
 
+.prediction-panel {
+  margin-top: 18px;
+  padding: 20px 22px;
+  border: 1px solid rgba(185, 120, 18, 0.25);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(185, 120, 18, 0.1), transparent 52%),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.prediction-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.prediction-header h2 {
+  margin-top: 5px;
+}
+
+.fun-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.fun-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--green-dark);
+  background: rgba(15, 139, 95, 0.1);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.fun-tag.hot,
+.fun-tag.goals {
+  color: #9f1239;
+  background: rgba(214, 69, 80, 0.1);
+}
+
+.fun-tag.draw,
+.fun-tag.market {
+  color: #92400e;
+  background: rgba(185, 120, 18, 0.14);
+}
+
+.fun-tag.split,
+.fun-tag.final {
+  color: #1d4ed8;
+  background: rgba(28, 109, 208, 0.1);
+}
+
+.prediction-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.prediction-form,
+.leaderboard-card {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.prediction-form {
+  display: grid;
+  gap: 13px;
+}
+
+.prediction-field {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.prediction-field input[type="text"],
+.prediction-field input[type="number"] {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface-soft);
+  font: inherit;
+}
+
+.pick-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.pick-button {
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #fbfcfc;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.pick-button.selected {
+  color: #ffffff;
+  border-color: var(--green-dark);
+  background: var(--green-dark);
+}
+
+.score-confidence-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1fr);
+  gap: 12px;
+}
+
+.score-inputs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-inputs strong {
+  color: var(--muted);
+}
+
+#confidenceInput {
+  accent-color: var(--green-dark);
+}
+
+.prediction-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.prediction-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.prediction-comparison {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  color: var(--green-dark);
+  background: rgba(15, 139, 95, 0.09);
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.leaderboard-card {
+  display: grid;
+  gap: 12px;
+}
+
+.leaderboard-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fbfcfc;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.leaderboard-row .rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--gold);
+  font-weight: 900;
+}
+
+.leaderboard-row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-empty {
+  padding: 18px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  line-height: 1.55;
+  background: #fbfcfc;
+}
+
 .market-header,
 .market-card-head {
   display: flex;
@@ -663,6 +879,7 @@ select {
   .match-brief,
   .probability-section,
   .watch-grid,
+  .prediction-layout,
   .market-grid,
   .analysis-grid {
     grid-template-columns: 1fr;
@@ -713,6 +930,7 @@ select {
   .brief-side,
   .probability-panel,
   .watch-panel,
+  .prediction-panel,
   .market-panel,
   .analysis-panel,
   .ai-panel,
@@ -736,6 +954,7 @@ select {
   .match-brief,
   .probability-section,
   .watch-panel,
+  .prediction-panel,
   .market-panel,
   .analysis-panel,
   .ai-panel,
@@ -747,6 +966,7 @@ select {
   .brief-side,
   .probability-panel,
   .watch-panel,
+  .prediction-panel,
   .market-panel,
   .analysis-panel,
   .ai-panel,
@@ -847,6 +1067,30 @@ select {
     align-items: flex-start;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .prediction-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .score-confidence-grid,
+  .pick-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .prediction-form,
+  .leaderboard-card {
+    padding: 12px;
+  }
+
+  .leaderboard-row {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+  }
+
+  .leaderboard-row span:last-child {
+    grid-column: 2 / -1;
   }
 
   .market-grid {
