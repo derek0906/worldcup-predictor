@@ -1379,14 +1379,60 @@ function renderLeaderboard(data = leaderboardCache, mode = "online") {
   elements.leaderboardRows.innerHTML = rows
     .slice(0, 8)
     .map((row, index) => `
-      <div class="leaderboard-row">
-        <span class="rank">${index + 1}</span>
-        <strong>${escapeHtml(row.nickname)}</strong>
-        <span>连红 ${row.currentStreak}</span>
-        <span>${row.totalHits}/${row.totalPredictions}</span>
+      <div class="leaderboard-entry">
+        <div class="leaderboard-row">
+          <span class="rank">${index + 1}</span>
+          <strong>${escapeHtml(row.nickname)}</strong>
+          <span>连红 ${row.currentStreak}</span>
+          <span>${row.totalHits}/${row.totalPredictions}</span>
+          <button class="strategy-view-button" type="button">看策略</button>
+        </div>
+        ${renderLeaderboardStrategy(row)}
       </div>
     `)
     .join("");
+
+  elements.leaderboardRows.querySelectorAll(".strategy-view-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      const card = button.closest(".leaderboard-entry")?.querySelector(".leaderboard-strategy");
+      if (!card) return;
+      const shouldShow = card.hidden;
+      card.hidden = !shouldShow;
+      button.textContent = shouldShow ? "收起" : "看策略";
+    });
+  });
+}
+
+function renderLeaderboardStrategy(row) {
+  const strategy = row.latestStrategy;
+  if (!strategy) {
+    return `<div class="leaderboard-strategy" hidden>暂无可查看策略。</div>`;
+  }
+
+  const match = matches.find((item) => matchCacheKey(item) === strategy.matchKey);
+  const result = match ? predict(match) : null;
+  const matchName = match && result ? `${result.home.name} vs ${result.away.name}` : strategy.matchKey || "未知比赛";
+  const pick = result ? pickLabel(strategy.pick, result) : strategy.pick || "未选择";
+  const score = Number.isInteger(strategy.scoreHome) && Number.isInteger(strategy.scoreAway)
+    ? `${strategy.scoreHome}-${strategy.scoreAway}`
+    : "未填写";
+  const details = [
+    `方向 ${pick}`,
+    `波胆 ${score}`,
+    `让球 ${strategyChoiceLabel("spread", strategy.spreadChoice)}`,
+    `大小球 ${strategyChoiceLabel("total", strategy.totalChoice)}`,
+    `角球 ${strategyChoiceLabel("corner", strategy.cornerChoice)}`,
+    `风险 ${strategyChoiceLabel("risk", strategy.riskChoice)}`,
+    `信心 ${strategy.confidence || "--"}%`,
+  ];
+
+  return `
+    <div class="leaderboard-strategy" hidden>
+      <strong>${escapeHtml(matchName)}</strong>
+      <p>${details.map(escapeHtml).join("｜")}</p>
+      <small>来这里生成你的策略：${SHARE_SITE_URL}</small>
+    </div>
+  `;
 }
 
 async function loadLeaderboard() {
@@ -1414,6 +1460,10 @@ async function submitPrediction(match) {
     scoreHome: draft.scoreHome,
     scoreAway: draft.scoreAway,
     confidence: draft.confidence,
+    spreadChoice: draft.spreadChoice,
+    totalChoice: draft.totalChoice,
+    cornerChoice: draft.cornerChoice,
+    riskChoice: draft.riskChoice,
   };
 
   try {

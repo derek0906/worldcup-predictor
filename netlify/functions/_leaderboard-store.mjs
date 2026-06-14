@@ -91,6 +91,10 @@ export function sanitizePrediction(input, matches, now = new Date()) {
   }
 
   const confidence = Math.min(100, Math.max(1, Number.parseInt(input?.confidence, 10) || 50));
+  const spreadChoice = sanitizeChoice(input?.spreadChoice, ["none", "follow", "avoid"], "none");
+  const totalChoice = sanitizeChoice(input?.totalChoice, ["none", "over", "under"], "none");
+  const cornerChoice = sanitizeChoice(input?.cornerChoice, ["none", "over", "under"], "none");
+  const riskChoice = sanitizeChoice(input?.riskChoice, ["steady", "medium", "upset"], "medium");
   const timestamp = now.toISOString();
 
   return {
@@ -103,9 +107,33 @@ export function sanitizePrediction(input, matches, now = new Date()) {
       scoreHome,
       scoreAway,
       confidence,
+      spreadChoice,
+      totalChoice,
+      cornerChoice,
+      riskChoice,
       createdAt: timestamp,
       updatedAt: timestamp,
     },
+  };
+}
+
+function sanitizeChoice(value, allowed, fallback) {
+  const choice = String(value || fallback);
+  return allowed.includes(choice) ? choice : fallback;
+}
+
+function publicStrategy(prediction) {
+  return {
+    matchKey: prediction.matchKey || "",
+    pick: prediction.pick || "",
+    scoreHome: Number.isInteger(prediction.scoreHome) ? prediction.scoreHome : null,
+    scoreAway: Number.isInteger(prediction.scoreAway) ? prediction.scoreAway : null,
+    confidence: Number.isInteger(prediction.confidence) ? prediction.confidence : null,
+    spreadChoice: prediction.spreadChoice || "none",
+    totalChoice: prediction.totalChoice || "none",
+    cornerChoice: prediction.cornerChoice || "none",
+    riskChoice: prediction.riskChoice || "medium",
+    updatedAt: prediction.updatedAt || "",
   };
 }
 
@@ -162,6 +190,7 @@ export function buildLeaderboard(predictions, matches) {
       totalPredictions: user.predictions.length,
       latestMatch: latest?.matchKey || "",
       latestPick: latest?.pick || "",
+      latestStrategy: latest ? publicStrategy(latest) : null,
       updatedAt: latest?.updatedAt || "",
     };
   });
@@ -176,13 +205,17 @@ export function buildLeaderboard(predictions, matches) {
     .slice()
     .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
     .slice(0, 8)
-    .map(({ nickname, matchKey, pick, scoreHome, scoreAway, confidence, updatedAt }) => ({
+    .map(({ nickname, matchKey, pick, scoreHome, scoreAway, confidence, spreadChoice, totalChoice, cornerChoice, riskChoice, updatedAt }) => ({
       nickname,
       matchKey,
       pick,
       scoreHome,
       scoreAway,
       confidence,
+      spreadChoice: spreadChoice || "none",
+      totalChoice: totalChoice || "none",
+      cornerChoice: cornerChoice || "none",
+      riskChoice: riskChoice || "medium",
       updatedAt,
     }));
 

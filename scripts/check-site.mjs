@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 
 const appSource = await readFile("app.js", "utf8");
 const indexSource = await readFile("index.html", "utf8");
+const stylesSource = await readFile("styles.css", "utf8");
 const netlifyConfig = await readFile("netlify.toml", "utf8");
 const leaderboardStoreSource = await readFile("netlify/functions/_leaderboard-store.mjs", "utf8");
 const autoUpdateWorkflow = await readFile(".github/workflows/update-data.yml", "utf8").catch(() => "");
@@ -27,6 +28,8 @@ assert.match(appSource, /applyRealDataCache/, "frontend should apply real data b
 assert.doesNotMatch(indexSource, /id="copyButton"/, "quick judgment should not keep a duplicate share button");
 assert.doesNotMatch(indexSource, /复制分享文案/, "quick judgment share copy should be removed");
 assert.match(indexSource, /今日投注雷达/, "match brief should include betting radar content");
+assert.match(indexSource, /世界杯朋友局策略桌/, "site should use a friend-group strategy table identity");
+assert.match(indexSource, /今日策略雷达/, "radar copy should feel like a strategy helper instead of a model report");
 assert.match(indexSource, /id="copyMultiStrategyButton"/, "prediction panel should include multi-match strategy sharing");
 assert.match(indexSource, /id="predictionPanel"/, "index.html should include prediction panel");
 assert.match(indexSource, /id="leaderboardRows"/, "index.html should include leaderboard rows");
@@ -45,6 +48,8 @@ assert.match(appSource, /buildBettingRadar/, "app.js should build the betting ra
 assert.match(appSource, /buildExpandedStrategyCard/, "app.js should build expanded betting strategy sections");
 assert.match(appSource, /buildMultiMatchStrategyShare/, "app.js should build compact multi-match strategy copy");
 assert.match(appSource, /userStrategyChoiceText/, "strategy card should be built from user-selected strategy choices");
+assert.match(appSource, /renderLeaderboardStrategy/, "leaderboard should render another user's saved strategy");
+assert.match(appSource, /看策略/, "leaderboard rows should offer a view-strategy action");
 assert.match(appSource, /我的选择/, "shared strategy copy should emphasize the user's own choices");
 assert.match(appSource, /SHARE_SITE_URL/, "shared strategy copy should include a reusable site URL");
 assert.match(appSource, /来这里生成你的策略/, "shared strategy copy should invite friends back to the site");
@@ -55,6 +60,14 @@ assert.match(appSource, /大小球/, "shared strategy text should include totals
 assert.match(appSource, /波胆/, "shared strategy text should include correct-score strategy");
 assert.match(appSource, /开球/, "shared strategy text should include kickoff strategy");
 assert.match(appSource, /角球/, "shared strategy text should include corner strategy");
+assert.match(stylesSource, /--grass/, "visual style should include grass-green theme tokens");
+assert.match(stylesSource, /--gold-bright/, "visual style should include gold highlight tokens");
+assert.match(stylesSource, /--ticket/, "strategy cards should use a ticket-like surface token");
+assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /latestStrategy/, "leaderboard API should expose each user's latest strategy");
+assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /spreadChoice/, "leaderboard storage should persist spread strategy choice");
+assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /totalChoice/, "leaderboard storage should persist totals strategy choice");
+assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /cornerChoice/, "leaderboard storage should persist corner strategy choice");
+assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /riskChoice/, "leaderboard storage should persist risk style choice");
 assert.match(appSource, /initialMatchIndex/, "app.js should choose the nearest relevant match on page load");
 assert.match(appSource, /filter\(\(item\) => item\.kickoffTime >= nowTime\)/, "initial match should prefer upcoming matches");
 assert.match(appSource, /elements\.matchSelect\.value = String\(state\.matchIndex\)/, "match selector should sync to the initial match");
