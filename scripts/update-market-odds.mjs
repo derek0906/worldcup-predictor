@@ -1,21 +1,21 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 const outputPath = process.argv[2] || "data/market-odds.json";
-const matchMap = [
-  { key: "mexico-southAfrica", home: "mexico", away: "southafrica" },
-  { key: "korea-czechia", home: "southkorea", away: "czech" },
-  { key: "canada-bosnia", home: "canada", away: "bosnia" },
-  { key: "usa-paraguay", home: "unitedstates", away: "paraguay" },
-  { key: "brazil-morocco", home: "brazil", away: "morocco" },
-  { key: "germany-curacao", home: "germany", away: "curacao" },
-  { key: "spain-capeVerde", home: "spain", away: "capeverde" },
-  { key: "france-senegal", home: "france", away: "senegal" },
-  { key: "argentina-algeria", home: "argentina", away: "algeria" },
-  { key: "austria-jordan", home: "austria", away: "jordan" },
-  { key: "england-croatia", home: "england", away: "croatia" },
-  { key: "portugal-colombia", home: "portugal", away: "colombia" },
-];
+const matchesPath = "data/matches.json";
+const teamSearchNames = {
+  korea: ["southkorea", "korearepublic", "korea"],
+  czechia: ["czechia", "czechrepublic", "czech"],
+  usa: ["unitedstates", "unitedstatesofamerica", "usa"],
+  southAfrica: ["southafrica", "rsa"],
+  capeVerde: ["capeverde", "caboverde", "capeverdeislands"],
+  saudiArabia: ["saudiarabia", "saudi", "ksa"],
+  newZealand: ["newzealand"],
+  ivoryCoast: ["ivorycoast", "cotedivoire", "ctedivoire"],
+  drCongo: ["drcongo", "congodr", "democraticrepublicofcongo"],
+  turkiye: ["turkiye", "turkey"],
+};
 const existing = await readExistingOdds();
+const matchMap = await readMatchMap();
 const now = new Date().toISOString();
 
 let nextOdds = existing;
@@ -43,6 +43,22 @@ async function readExistingOdds() {
     return JSON.parse(await readFile(outputPath, "utf8"));
   } catch {
     return {};
+  }
+}
+
+async function readMatchMap() {
+  try {
+    const data = JSON.parse(await readFile(matchesPath, "utf8"));
+    return (data.matches || []).map((match) => ({
+      key: match.key || `${match.home}-${match.away}`,
+      home: teamTerms(match.home),
+      away: teamTerms(match.away),
+    }));
+  } catch {
+    return Object.keys(existing).map((key) => {
+      const [home, away] = key.split("-");
+      return { key, home: teamTerms(home), away: teamTerms(away) };
+    });
   }
 }
 
@@ -125,9 +141,18 @@ function matchesEvent(event, match) {
   const home = normalizeName(event.home_team);
   const away = normalizeName(event.away_team);
   return (
-    (home.includes(match.home) && away.includes(match.away)) ||
-    (home.includes(match.away) && away.includes(match.home))
+    (nameMatches(home, match.home) && nameMatches(away, match.away)) ||
+    (nameMatches(home, match.away) && nameMatches(away, match.home))
   );
+}
+
+function teamTerms(key) {
+  const terms = teamSearchNames[key] || [key];
+  return terms.map(normalizeName);
+}
+
+function nameMatches(eventName, terms) {
+  return terms.some((term) => eventName.includes(term) || term.includes(eventName));
 }
 
 function firstMarket(event, key) {

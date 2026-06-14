@@ -15,6 +15,7 @@ const marketOdds = JSON.parse(await readFile("data/market-odds.json", "utf8"));
 const realMatches = JSON.parse(await readFile("data/matches.json", "utf8"));
 const teamRatings = JSON.parse(await readFile("data/team-ratings.json", "utf8"));
 const modelInputs = JSON.parse(await readFile("data/model-inputs.json", "utf8"));
+const oddsUpdaterSource = await readFile("scripts/update-market-odds.mjs", "utf8");
 
 const matchBlock = appSource.match(/(?:const|let) matches = \[(?<body>[\s\S]*?)\];/);
 assert.ok(matchBlock, "app.js should define matches");
@@ -25,6 +26,7 @@ assert.match(appSource, /Array\.isArray\(market\.correctScore\)/, "market render
 assert.match(appSource, /market\.corners &&/, "market rendering should tolerate missing corners");
 assert.match(appSource, /loadRealDataCache/, "frontend should try to load real data cache");
 assert.match(appSource, /applyRealDataCache/, "frontend should apply real data before rendering");
+assert.match(appSource, /seedByKey/, "frontend should replace the seed schedule with the full real-data schedule");
 assert.doesNotMatch(indexSource, /id="copyButton"/, "quick judgment should not keep a duplicate share button");
 assert.doesNotMatch(indexSource, /复制分享文案/, "quick judgment share copy should be removed");
 assert.match(indexSource, /今日投注雷达/, "match brief should include betting radar content");
@@ -79,9 +81,10 @@ assert.match(netlifyConfig, /included_files\s*=\s*\["data\/matches\.json"\]/, "n
 assert.match(await readFile("netlify/functions/predictions.mjs", "utf8"), /predictions/, "predictions function should persist predictions");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /FOOTBALL_DATA_API_KEY/, "real data updater should support football-data.org");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /TEAM_RATINGS_SOURCE_URL/, "real data updater should support external rating input");
-assert.match(await readFile("scripts/update-market-odds.mjs", "utf8"), /ODDS_API_MARKETS/, "odds updater should allow expanded market selection");
-assert.match(await readFile("scripts/update-market-odds.mjs", "utf8"), /spreads/, "odds updater should support spread markets");
-assert.match(await readFile("scripts/update-market-odds.mjs", "utf8"), /totals/, "odds updater should support totals markets");
+assert.match(oddsUpdaterSource, /ODDS_API_MARKETS/, "odds updater should allow expanded market selection");
+assert.match(oddsUpdaterSource, /spreads/, "odds updater should support spread markets");
+assert.match(oddsUpdaterSource, /totals/, "odds updater should support totals markets");
+assert.match(oddsUpdaterSource, /readMatchMap/, "odds updater should build match coverage from data/matches.json");
 assert.match(autoUpdateWorkflow, /node scripts\/update-real-data\.mjs/, "scheduled data workflow should refresh match and rating caches");
 assert.match(autoUpdateWorkflow, /node scripts\/update-market-odds\.mjs/, "scheduled data workflow should refresh market odds cache");
 assert.match(autoUpdateWorkflow, /cron: "\*\/30 16-23 \* \* \*"/, "scheduled data workflow should update every 30 minutes during the UTC match evening window");
@@ -93,7 +96,19 @@ assert.match(autoUpdateWorkflow, /file_pattern: data\/matches\.json data\/team-r
 
 assert.ok(Array.isArray(realMatches.matches), "data/matches.json should contain matches array");
 assert.ok(realMatches.meta?.updatedAt, "data/matches.json should include metadata");
+assert.ok(realMatches.matches.length >= 72, "data/matches.json should include the full group-stage schedule");
+assert.deepEqual(
+  realMatches.matches
+    .filter((match) => match.kickoffAt && scheduleDate(match.kickoffAt) === "2026-06-15")
+    .map((match) => match.key)
+    .sort(),
+  ["belgium-egypt", "iran-newZealand", "saudiArabia-uruguay", "spain-capeVerde"].sort(),
+  "June 15 US schedule should include all four matches",
+);
 assert.ok(teamRatings.teams && typeof teamRatings.teams === "object", "data/team-ratings.json should contain teams object");
+for (const key of ["belgium", "egypt", "saudiArabia", "uruguay", "iran", "newZealand"]) {
+  assert.ok(teamRatings.teams[key], `team-ratings should include ${key}`);
+}
 assert.ok(modelInputs.weights && typeof modelInputs.weights === "object", "data/model-inputs.json should contain model weights");
 
 for (const [key, market] of Object.entries(marketOdds)) {
@@ -107,6 +122,15 @@ for (const [key, market] of Object.entries(marketOdds)) {
 }
 
 await assertNoProviderDoesNotRewrite();
+
+function scheduleDate(value) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
+}
 
 async function assertNoProviderDoesNotRewrite() {
   const tempDir = await mkdtemp(join(tmpdir(), "worldcup-odds-"));

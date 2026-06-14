@@ -1,10 +1,13 @@
 {
   "meta": {
-    "source": "Seed cache. Refresh with scripts/update-real-data.mjs and TEAM_RATINGS_SOURCE_URL for Elo/FIFA rating input.",
-    "updatedAt": "2026-06-14T00:00:00.000+08:00"
+    "source": "Expanded seed cache with all 2026 group-stage teams; refresh ratings with TEAM_RATINGS_SOURCE_URL.",
+    "updatedAt": "2026-06-14T16:50:21.890Z"
   },
   "teams": {
     "mexico": {
+      "name": "墨西哥",
+      "short": "MEX",
+      "flag": "🇲🇽",
       "rating": 79,
       "form": 72,
       "attack": 76,
@@ -14,6 +17,9 @@
       "dataSource": "seed"
     },
     "southAfrica": {
+      "name": "南非",
+      "short": "RSA",
+      "flag": "🇿🇦",
       "rating": 66,
       "form": 65,
       "attack": 62,
@@ -23,6 +29,9 @@
       "dataSource": "seed"
     },
     "korea": {
+      "name": "韩国",
+      "short": "KOR",
+      "flag": "🇰🇷",
       "rating": 76,
       "form": 74,
       "attack": 73,
@@ -32,6 +41,9 @@
       "dataSource": "seed"
     },
     "czechia": {
+      "name": "捷克",
+      "short": "CZE",
+      "flag": "🇨🇿",
       "rating": 73,
       "form": 70,
       "attack": 71,
@@ -41,6 +53,9 @@
       "dataSource": "seed"
     },
     "canada": {
+      "name": "加拿大",
+      "short": "CAN",
+      "flag": "🇨🇦",
       "rating": 72,
       "form": 71,
       "attack": 72,
@@ -50,6 +65,9 @@
       "dataSource": "seed"
     },
     "bosnia": {
+      "name": "波黑",
+      "short": "BIH",
+      "flag": "🇧🇦",
       "rating": 71,
       "form": 68,
       "attack": 70,
@@ -59,6 +77,9 @@
       "dataSource": "seed"
     },
     "usa": {
+      "name": "美国",
+      "short": "USA",
+      "flag": "🇺🇸",
       "rating": 78,
       "form": 73,
       "attack": 76,
@@ -68,6 +89,9 @@
       "dataSource": "seed"
     },
     "paraguay": {
+      "name": "巴拉圭",
+      "short": "PAR",
+      "flag": "🇵🇾",
       "rating": 73,
       "form": 71,
       "attack": 69,
@@ -77,6 +101,9 @@
       "dataSource": "seed"
     },
     "brazil": {
+      "name": "巴西",
+      "short": "BRA",
+      "flag": "🇧🇷",
       "rating": 91,
       "form": 84,
       "attack": 91,
@@ -86,6 +113,9 @@
       "dataSource": "seed"
     },
     "morocco": {
+      "name": "摩洛哥",
+      "short": "MAR",
+      "flag": "🇲🇦",
       "rating": 82,
       "form": 80,
       "attack": 78,
@@ -95,6 +125,9 @@
       "dataSource": "seed"
     },
     "germany": {
+      "name": "德国",
+      "short": "GER",
+      "flag": "🇩🇪",
       "rating": 87,
       "form": 82,
       "attack": 86,
@@ -104,6 +137,9 @@
       "dataSource": "seed"
     },
     "curacao": {
+      "name": "库拉索",
+      "short": "CUW",
+      "flag": "🇨🇼",
       "rating": 61,
       "form": 66,
       "attack": 60,
@@ -113,6 +149,9 @@
       "dataSource": "seed"
     },
     "spain": {
+      "name": "西班牙",
+      "short": "ESP",
+      "flag": "🇪🇸",
       "rating": 90,
       "form": 88,
       "attack": 88,
@@ -122,6 +161,9 @@
       "dataSource": "seed"
     },
     "capeVerde": {
+      "name": "佛得角",
+      "short": "CPV",
+      "flag": "🇨🇻",
       "rating": 67,
       "form": 70,
       "attack": 66,
@@ -131,6 +173,9 @@
       "dataSource": "seed"
     },
     "france": {
+      "name": "法国",
+      "short": "FRA",
+      "flag": "🇫🇷",
       "rating": 92,
       "form": 86,
       "attack": 90,
@@ -140,6 +185,9 @@
       "dataSource": "seed"
     },
     "senegal": {
+      "name": "塞内加尔",
+      "short": "SEN",
+      "flag": "🇸🇳",
       "rating": 80,
       "form": 77,
       "attack": 76,
@@ -149,6 +197,9 @@
       "dataSource": "seed"
     },
     "argentina": {
+      "name": "阿根廷",
+      "short": "ARG",
+      "flag": "🇦🇷",
       "rating": 91,
       "form": 87,
       "attack": 88,
@@ -158,6 +209,9 @@
       "dataSource": "seed"
     },
     "algeria": {
+      "name": "阿尔及利亚",
+      "short": "ALG",
+      "flag": "🇩🇿",
       "rating": 75,
       "form": 77,
       "attack": 74,
@@ -167,6 +221,9 @@
       "dataSource": "seed"
     },
     "austria": {
+      "name": "奥地利",
+      "short": "AUT",
+      "flag": "🇦🇹",
       "rating": 78,
       "form": 76,
       "attack": 75,
@@ -176,6 +233,9 @@
       "dataSource": "seed"
     },
     "jordan": {
+      "name": "约旦",
+      "short": "JOR",
+      "flag": "🇯🇴",
       "rating": 63,
       "form": 68,
       "attack": 62,
@@ -185,6 +245,9 @@
       "dataSource": "seed"
     },
     "england": {
+      "name": "英格兰",
+      "short": "ENG",
+      "flag": "🏴",
       "rating": 89,
       "form": 84,
       "attack": 87,
@@ -194,6 +257,9 @@
       "dataSource": "seed"
     },
     "croatia": {
+      "name": "克罗地亚",
+      "short": "CRO",
+      "flag": "🇭🇷",
       "rating": 82,
       "form": 76,
       "attack": 78,
@@ -203,6 +269,9 @@
       "dataSource": "seed"
     },
     "portugal": {
+      "name": "葡萄牙",
+      "short": "POR",
+      "flag": "🇵🇹",
       "rating": 88,
       "form": 83,
       "attack": 88,
@@ -212,6 +281,9 @@
       "dataSource": "seed"
     },
     "colombia": {
+      "name": "哥伦比亚",
+      "short": "COL",
+      "flag": "🇨🇴",
       "rating": 81,
       "form": 82,
       "attack": 79,
@@ -219,6 +291,294 @@
       "experience": 74,
       "hostBoost": 0,
       "dataSource": "seed"
+    },
+    "qatar": {
+      "name": "卡塔尔",
+      "short": "QAT",
+      "flag": "🇶🇦",
+      "rating": 67,
+      "form": 66,
+      "attack": 66,
+      "defense": 65,
+      "experience": 62,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "switzerland": {
+      "name": "瑞士",
+      "short": "SUI",
+      "flag": "🇨🇭",
+      "rating": 81,
+      "form": 79,
+      "attack": 78,
+      "defense": 80,
+      "experience": 82,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "haiti": {
+      "name": "海地",
+      "short": "HAI",
+      "flag": "🇭🇹",
+      "rating": 62,
+      "form": 64,
+      "attack": 61,
+      "defense": 60,
+      "experience": 45,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "scotland": {
+      "name": "苏格兰",
+      "short": "SCO",
+      "flag": "🏴",
+      "rating": 76,
+      "form": 74,
+      "attack": 73,
+      "defense": 74,
+      "experience": 70,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "australia": {
+      "name": "澳大利亚",
+      "short": "AUS",
+      "flag": "🇦🇺",
+      "rating": 74,
+      "form": 72,
+      "attack": 71,
+      "defense": 73,
+      "experience": 76,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "turkiye": {
+      "name": "土耳其",
+      "short": "TUR",
+      "flag": "🇹🇷",
+      "rating": 78,
+      "form": 77,
+      "attack": 79,
+      "defense": 73,
+      "experience": 72,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "ivoryCoast": {
+      "name": "科特迪瓦",
+      "short": "CIV",
+      "flag": "🇨🇮",
+      "rating": 77,
+      "form": 76,
+      "attack": 77,
+      "defense": 74,
+      "experience": 70,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "ecuador": {
+      "name": "厄瓜多尔",
+      "short": "ECU",
+      "flag": "🇪🇨",
+      "rating": 78,
+      "form": 77,
+      "attack": 75,
+      "defense": 78,
+      "experience": 73,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "netherlands": {
+      "name": "荷兰",
+      "short": "NED",
+      "flag": "🇳🇱",
+      "rating": 88,
+      "form": 84,
+      "attack": 86,
+      "defense": 82,
+      "experience": 89,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "japan": {
+      "name": "日本",
+      "short": "JPN",
+      "flag": "🇯🇵",
+      "rating": 80,
+      "form": 81,
+      "attack": 79,
+      "defense": 78,
+      "experience": 76,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "sweden": {
+      "name": "瑞典",
+      "short": "SWE",
+      "flag": "🇸🇪",
+      "rating": 77,
+      "form": 74,
+      "attack": 75,
+      "defense": 76,
+      "experience": 76,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "tunisia": {
+      "name": "突尼斯",
+      "short": "TUN",
+      "flag": "🇹🇳",
+      "rating": 72,
+      "form": 71,
+      "attack": 69,
+      "defense": 73,
+      "experience": 68,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "belgium": {
+      "name": "比利时",
+      "short": "BEL",
+      "flag": "🇧🇪",
+      "rating": 84,
+      "form": 79,
+      "attack": 83,
+      "defense": 78,
+      "experience": 86,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "egypt": {
+      "name": "埃及",
+      "short": "EGY",
+      "flag": "🇪🇬",
+      "rating": 76,
+      "form": 75,
+      "attack": 76,
+      "defense": 72,
+      "experience": 74,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "iran": {
+      "name": "伊朗",
+      "short": "IRN",
+      "flag": "🇮🇷",
+      "rating": 77,
+      "form": 76,
+      "attack": 75,
+      "defense": 75,
+      "experience": 76,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "newZealand": {
+      "name": "新西兰",
+      "short": "NZL",
+      "flag": "🇳🇿",
+      "rating": 63,
+      "form": 65,
+      "attack": 62,
+      "defense": 63,
+      "experience": 56,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "saudiArabia": {
+      "name": "沙特",
+      "short": "KSA",
+      "flag": "🇸🇦",
+      "rating": 68,
+      "form": 68,
+      "attack": 67,
+      "defense": 66,
+      "experience": 67,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "uruguay": {
+      "name": "乌拉圭",
+      "short": "URU",
+      "flag": "🇺🇾",
+      "rating": 83,
+      "form": 82,
+      "attack": 82,
+      "defense": 80,
+      "experience": 86,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "iraq": {
+      "name": "伊拉克",
+      "short": "IRQ",
+      "flag": "🇮🇶",
+      "rating": 68,
+      "form": 69,
+      "attack": 67,
+      "defense": 67,
+      "experience": 61,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "norway": {
+      "name": "挪威",
+      "short": "NOR",
+      "flag": "🇳🇴",
+      "rating": 80,
+      "form": 79,
+      "attack": 83,
+      "defense": 74,
+      "experience": 68,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "drCongo": {
+      "name": "刚果（金）",
+      "short": "COD",
+      "flag": "🇨🇩",
+      "rating": 70,
+      "form": 72,
+      "attack": 70,
+      "defense": 68,
+      "experience": 58,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "uzbekistan": {
+      "name": "乌兹别克斯坦",
+      "short": "UZB",
+      "flag": "🇺🇿",
+      "rating": 69,
+      "form": 72,
+      "attack": 68,
+      "defense": 67,
+      "experience": 52,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "ghana": {
+      "name": "加纳",
+      "short": "GHA",
+      "flag": "🇬🇭",
+      "rating": 73,
+      "form": 71,
+      "attack": 72,
+      "defense": 71,
+      "experience": 72,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
+    },
+    "panama": {
+      "name": "巴拿马",
+      "short": "PAN",
+      "flag": "🇵🇦",
+      "rating": 66,
+      "form": 66,
+      "attack": 65,
+      "defense": 64,
+      "experience": 55,
+      "hostBoost": 0,
+      "dataSource": "seed-expanded"
     }
   }
 }

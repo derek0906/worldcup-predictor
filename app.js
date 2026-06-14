@@ -153,6 +153,72 @@ let teams = {
     experience: 45,
     hostBoost: 0,
   },
+  belgium: {
+    name: "比利时",
+    short: "BEL",
+    flag: "🇧🇪",
+    rating: 84,
+    form: 79,
+    attack: 83,
+    defense: 78,
+    experience: 86,
+    hostBoost: 0,
+  },
+  egypt: {
+    name: "埃及",
+    short: "EGY",
+    flag: "🇪🇬",
+    rating: 76,
+    form: 75,
+    attack: 76,
+    defense: 72,
+    experience: 74,
+    hostBoost: 0,
+  },
+  saudiArabia: {
+    name: "沙特",
+    short: "KSA",
+    flag: "🇸🇦",
+    rating: 68,
+    form: 68,
+    attack: 67,
+    defense: 66,
+    experience: 67,
+    hostBoost: 0,
+  },
+  uruguay: {
+    name: "乌拉圭",
+    short: "URU",
+    flag: "🇺🇾",
+    rating: 83,
+    form: 82,
+    attack: 82,
+    defense: 80,
+    experience: 86,
+    hostBoost: 0,
+  },
+  iran: {
+    name: "伊朗",
+    short: "IRN",
+    flag: "🇮🇷",
+    rating: 77,
+    form: 76,
+    attack: 75,
+    defense: 75,
+    experience: 76,
+    hostBoost: 0,
+  },
+  newZealand: {
+    name: "新西兰",
+    short: "NZL",
+    flag: "🇳🇿",
+    rating: 63,
+    form: 65,
+    attack: 62,
+    defense: 63,
+    experience: 56,
+    hostBoost: 0,
+  },
   france: {
     name: "法国",
     short: "FRA",
@@ -550,21 +616,35 @@ function applyRealDataCache(realData) {
   const realTeams = realData.ratings?.teams || {};
 
   if (realMatches.length > 0) {
-    const byKey = new Map(realMatches.map((match) => [match.key || matchCacheKey(match), match]));
-    matches = matches.map((match) => {
-      const realMatch = byKey.get(matchCacheKey(match));
-      return realMatch ? { ...match, ...realMatch } : match;
-    });
+    const seedByKey = new Map(matches.map((match) => [matchCacheKey(match), match]));
+    matches = realMatches.map((realMatch) => ({
+      ...(seedByKey.get(realMatch.key || matchCacheKey(realMatch)) || {}),
+      ...realMatch,
+    }));
+    matches.sort((a, b) => new Date(a.kickoffAt || 0) - new Date(b.kickoffAt || 0));
   }
 
   for (const [key, rating] of Object.entries(realTeams)) {
-    if (!teams[key]) continue;
+    if (!teams[key]) {
+      teams[key] = {
+        name: rating.name || key,
+        short: rating.short || key.slice(0, 3).toUpperCase(),
+        flag: rating.flag || "🏳️",
+        rating: Number(rating.rating || 65),
+        form: Number(rating.form || 65),
+        attack: Number(rating.attack || 65),
+        defense: Number(rating.defense || 65),
+        experience: Number(rating.experience || 55),
+        hostBoost: Number(rating.hostBoost || 0),
+      };
+      continue;
+    }
     teams[key] = {
       ...teams[key],
       ...rating,
-      name: teams[key].name,
-      short: teams[key].short,
-      flag: teams[key].flag,
+      name: teams[key].name || rating.name,
+      short: teams[key].short || rating.short,
+      flag: teams[key].flag || rating.flag,
     };
   }
 }
