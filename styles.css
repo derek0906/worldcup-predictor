@@ -605,6 +605,79 @@ select {
   opacity: 0.65;
 }
 
+.strategy-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(15, 139, 95, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(15, 139, 95, 0.12), rgba(245, 184, 67, 0.12)),
+    #fbfcfc;
+}
+
+.strategy-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.strategy-card-head span,
+.strategy-main span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.strategy-card-head strong {
+  color: var(--green-dark);
+  font-size: 18px;
+}
+
+.strategy-main {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.strategy-main div {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.strategy-main strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.strategy-card p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.strategy-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.strategy-tags span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: var(--green-dark);
+  background: rgba(15, 139, 95, 0.1);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .prediction-comparison {
   margin: 0;
   padding: 12px;
@@ -1076,7 +1149,8 @@ select {
   }
 
   .score-confidence-grid,
-  .pick-buttons {
+  .pick-buttons,
+  .strategy-main {
     grid-template-columns: 1fr;
   }
 

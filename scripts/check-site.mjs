@@ -26,9 +26,15 @@ assert.match(appSource, /loadRealDataCache/, "frontend should try to load real d
 assert.match(appSource, /applyRealDataCache/, "frontend should apply real data before rendering");
 assert.match(indexSource, /id="predictionPanel"/, "index.html should include prediction panel");
 assert.match(indexSource, /id="leaderboardRows"/, "index.html should include leaderboard rows");
+assert.match(indexSource, /id="strategyCard"/, "index.html should include a shareable strategy card");
+assert.match(indexSource, /id="strategyTitle"/, "index.html should show the user's strategy title");
 assert.match(appSource, /loadLeaderboard/, "app.js should load shared leaderboard");
 assert.match(appSource, /submitPrediction/, "app.js should submit user predictions");
 assert.match(appSource, /buildFunTags/, "app.js should render fun tags");
+assert.match(appSource, /buildStrategyCard/, "app.js should build strategy-card content");
+assert.match(appSource, /renderStrategyCard/, "app.js should render the strategy card when predictions change");
+assert.match(appSource, /下注策略/, "shared prediction text should include the user's strategy");
+assert.match(appSource, /风险等级/, "shared prediction text should include risk level");
 assert.match(appSource, /initialMatchIndex/, "app.js should choose the nearest relevant match on page load");
 assert.match(appSource, /filter\(\(item\) => item\.kickoffTime >= nowTime\)/, "initial match should prefer upcoming matches");
 assert.match(appSource, /elements\.matchSelect\.value = String\(state\.matchIndex\)/, "match selector should sync to the initial match");

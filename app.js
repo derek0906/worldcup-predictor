@@ -480,6 +480,13 @@ const elements = {
   confidenceValue: $("#confidenceValue"),
   submitPredictionButton: $("#submitPredictionButton"),
   copyMyPredictionButton: $("#copyMyPredictionButton"),
+  strategyTitle: $("#strategyTitle"),
+  strategyPick: $("#strategyPick"),
+  strategyScore: $("#strategyScore"),
+  strategyConfidence: $("#strategyConfidence"),
+  strategyReason: $("#strategyReason"),
+  strategyRisk: $("#strategyRisk"),
+  strategyEdge: $("#strategyEdge"),
   predictionComparison: $("#predictionComparison"),
   predictionNotice: $("#predictionNotice"),
   funTags: $("#funTags"),
@@ -845,6 +852,84 @@ function buildPredictionComparison(match, result, draft) {
     : `你和模型分歧明显，模型更偏 ${pickLabel(model, result)}，你更看好 ${pickLabel(userPick, result)}。`;
 }
 
+function buildStrategyCard(match, result, draft) {
+  const pick = draft?.pick || modelPick(result);
+  const confidence = Number(draft?.confidence || 70);
+  const scoreHome = Number(draft?.scoreHome ?? result.homeGoals);
+  const scoreAway = Number(draft?.scoreAway ?? result.awayGoals);
+  const model = modelPick(result);
+  const modelProb = model === "home" ? result.homeProb : model === "away" ? result.awayProb : result.drawProb;
+  const pickProb = pick === "home" ? result.homeProb : pick === "away" ? result.awayProb : result.drawProb;
+  const totalGoals = scoreHome + scoreAway;
+  const market = marketOddsCache[matchCacheKey(match)];
+  let marketSplit = false;
+  if (market?.winner) {
+    const implied = {
+      home: impliedProbability(market.winner.home),
+      draw: impliedProbability(market.winner.draw),
+      away: impliedProbability(market.winner.away),
+    };
+    marketSplit = Object.entries(implied).sort((a, b) => b[1] - a[1])[0][0] !== pick;
+  }
+
+  let title = "顺势跟模型";
+  let risk = "风险等级：中";
+  let edge = "策略标签：模型同路";
+  let reason = `跟随模型更高概率方向，重点看 ${pickLabel(pick, result)} 能否先进入比赛节奏。`;
+
+  if (pick !== model) {
+    title = pickProb <= 30 ? "冷门反打" : "分歧博弈";
+    risk = pickProb <= 30 ? "风险等级：高" : "风险等级：中高";
+    edge = "策略标签：反市场情绪";
+    reason = `我和模型分歧，选择 ${pickLabel(pick, result)}，赌的是比赛走势和临场变量。`;
+  } else if (confidence >= 80 && pickProb >= modelProb) {
+    title = "高信心稳胆";
+    risk = "风险等级：中低";
+    edge = "策略标签：稳健主线";
+    reason = `方向、模型和信心值一致，策略是少走偏门，押主线兑现。`;
+  } else if (pick === "draw") {
+    title = "平局防守";
+    risk = "风险等级：中高";
+    edge = "策略标签：防守反向";
+    reason = "这场平局权重不低，策略是避开强行分胜负，抓胶着局。";
+  } else if (totalGoals >= 4) {
+    title = "进球大战";
+    risk = "风险等级：中高";
+    edge = "策略标签：节奏进攻";
+    reason = `比分给到 ${scoreHome}-${scoreAway}，策略是看好比赛打开，前段节奏很关键。`;
+  } else if (confidence < 55) {
+    title = "轻仓试探";
+    risk = "风险等级：中";
+    edge = "策略标签：低信心观察";
+    reason = "信心值不高，策略是小注观察，不把这场当成稳胆。";
+  }
+
+  if (marketSplit) {
+    edge = "策略标签：模型市场分歧";
+  }
+
+  return {
+    title,
+    pickLabel: pickLabel(pick, result),
+    score: `${scoreHome}-${scoreAway}`,
+    confidence: `${confidence}%`,
+    reason,
+    risk,
+    edge,
+  };
+}
+
+function renderStrategyCard(match, result, draft) {
+  const strategy = buildStrategyCard(match, result, draft);
+  elements.strategyTitle.textContent = strategy.title;
+  elements.strategyPick.textContent = strategy.pickLabel;
+  elements.strategyScore.textContent = strategy.score;
+  elements.strategyConfidence.textContent = strategy.confidence;
+  elements.strategyReason.textContent = strategy.reason;
+  elements.strategyRisk.textContent = strategy.risk;
+  elements.strategyEdge.textContent = strategy.edge;
+}
+
 function buildFunTags(match, result) {
   const tags = [];
   const maxProb = Math.max(result.homeProb, result.drawProb, result.awayProb);
@@ -1021,6 +1106,7 @@ function renderPredictionForm(match, result) {
   elements.confidenceInput.value = String(draft.confidence ?? 70);
   elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
   renderPickButtons(result);
+  renderStrategyCard(match, result, draft);
   elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
 
   const locked = hasKickedOff(match);
@@ -1131,10 +1217,23 @@ async function submitPrediction(match) {
 
 function buildMyPredictionShare(match, result) {
   const draft = saveCurrentDraft(match);
+  const strategy = buildStrategyCard(match, result, draft);
   const side = pickLabel(draft.pick, result);
   const homeName = result.home.name;
   const awayName = result.away.name;
-  return `我的世界杯预测：${homeName} vs ${awayName}\n我看好：${side}\n比分：${draft.scoreHome}-${draft.scoreAway}\n信心：${draft.confidence}%\n模型推荐：${result.homeGoals}-${result.awayGoals}，${topPickText(result)}\n${buildPredictionComparison(match, result, draft)}`;
+  return [
+    `我的世界杯策略卡：${homeName} vs ${awayName}`,
+    `下注策略：${strategy.title}`,
+    `看好方向：${side}`,
+    `预测比分：${strategy.score}`,
+    `信心值：${strategy.confidence}`,
+    strategy.risk,
+    strategy.edge,
+    `策略理由：${strategy.reason}`,
+    `模型推荐：${result.homeGoals}-${result.awayGoals}，${topPickText(result)}`,
+    buildPredictionComparison(match, result, draft),
+    "仅供朋友局娱乐，不构成投注建议。",
+  ].join("\n");
 }
 
 function localAiFallback(payload) {
@@ -1373,6 +1472,7 @@ async function init() {
       const result = predict(match);
       const draft = saveCurrentDraft(match);
       renderPickButtons(result);
+      renderStrategyCard(match, result, draft);
       elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
     });
   });
@@ -1388,6 +1488,7 @@ async function init() {
       const result = predict(match);
       const draft = saveCurrentDraft(match);
       elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
+      renderStrategyCard(match, result, draft);
       elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
     });
   });

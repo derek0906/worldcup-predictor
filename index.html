@@ -179,8 +179,34 @@
 
             <div class="prediction-actions">
               <button id="submitPredictionButton" class="primary-button" type="submit">提交到连红榜</button>
-              <button id="copyMyPredictionButton" class="secondary-button" type="button">复制我的预测</button>
+              <button id="copyMyPredictionButton" class="secondary-button" type="button">复制策略卡</button>
             </div>
+
+            <article id="strategyCard" class="strategy-card" aria-label="我的下注策略分享卡">
+              <div class="strategy-card-head">
+                <span>我的下注策略</span>
+                <strong id="strategyTitle"></strong>
+              </div>
+              <div class="strategy-main">
+                <div>
+                  <span>方向</span>
+                  <strong id="strategyPick"></strong>
+                </div>
+                <div>
+                  <span>比分</span>
+                  <strong id="strategyScore"></strong>
+                </div>
+                <div>
+                  <span>信心</span>
+                  <strong id="strategyConfidence"></strong>
+                </div>
+              </div>
+              <p id="strategyReason"></p>
+              <div class="strategy-tags">
+                <span id="strategyRisk"></span>
+                <span id="strategyEdge"></span>
+              </div>
+            </article>
 
             <p id="predictionComparison" class="prediction-comparison"></p>
             <p id="predictionNotice" class="market-note"></p>
