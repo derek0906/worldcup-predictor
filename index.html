@@ -65,11 +65,24 @@
           </div>
         </div>
 
-        <aside class="brief-side" aria-label="核心结论">
-          <p class="card-label">快速判断</p>
-          <h2 id="verdictTitle"></h2>
-          <p id="verdictCopy"></p>
-          <button id="copyButton" class="secondary-button" type="button">复制分享文案</button>
+        <aside class="brief-side betting-radar" aria-label="今日投注雷达">
+          <p class="card-label">今日投注雷达</p>
+          <h2 id="radarTitle"></h2>
+          <div class="radar-list">
+            <div>
+              <span>稳胆方向</span>
+              <strong id="radarSteady"></strong>
+            </div>
+            <div>
+              <span>冷门警报</span>
+              <strong id="radarUpset"></strong>
+            </div>
+            <div>
+              <span>节奏倾向</span>
+              <strong id="radarTempo"></strong>
+            </div>
+          </div>
+          <p id="radarCopy"></p>
         </aside>
       </section>
 
@@ -180,6 +193,7 @@
             <div class="prediction-actions">
               <button id="submitPredictionButton" class="primary-button" type="submit">提交到连红榜</button>
               <button id="copyMyPredictionButton" class="secondary-button" type="button">复制策略卡</button>
+              <button id="copyMultiStrategyButton" class="secondary-button" type="button">复制今日多场策略</button>
             </div>
 
             <article id="strategyCard" class="strategy-card" aria-label="我的下注策略分享卡">
@@ -187,7 +201,7 @@
                 <span>我的下注策略</span>
                 <strong id="strategyTitle"></strong>
               </div>
-              <div class="strategy-main">
+              <div id="strategyMain" class="strategy-main">
                 <div>
                   <span>方向</span>
                   <strong id="strategyPick"></strong>

@@ -24,6 +24,10 @@ assert.match(appSource, /Array\.isArray\(market\.correctScore\)/, "market render
 assert.match(appSource, /market\.corners &&/, "market rendering should tolerate missing corners");
 assert.match(appSource, /loadRealDataCache/, "frontend should try to load real data cache");
 assert.match(appSource, /applyRealDataCache/, "frontend should apply real data before rendering");
+assert.doesNotMatch(indexSource, /id="copyButton"/, "quick judgment should not keep a duplicate share button");
+assert.doesNotMatch(indexSource, /复制分享文案/, "quick judgment share copy should be removed");
+assert.match(indexSource, /今日投注雷达/, "match brief should include betting radar content");
+assert.match(indexSource, /id="copyMultiStrategyButton"/, "prediction panel should include multi-match strategy sharing");
 assert.match(indexSource, /id="predictionPanel"/, "index.html should include prediction panel");
 assert.match(indexSource, /id="leaderboardRows"/, "index.html should include leaderboard rows");
 assert.match(indexSource, /id="strategyCard"/, "index.html should include a shareable strategy card");
@@ -33,8 +37,16 @@ assert.match(appSource, /submitPrediction/, "app.js should submit user predictio
 assert.match(appSource, /buildFunTags/, "app.js should render fun tags");
 assert.match(appSource, /buildStrategyCard/, "app.js should build strategy-card content");
 assert.match(appSource, /renderStrategyCard/, "app.js should render the strategy card when predictions change");
+assert.match(appSource, /buildBettingRadar/, "app.js should build the betting radar replacement for quick judgment");
+assert.match(appSource, /buildExpandedStrategyCard/, "app.js should build expanded betting strategy sections");
+assert.match(appSource, /buildMultiMatchStrategyShare/, "app.js should build compact multi-match strategy copy");
 assert.match(appSource, /下注策略/, "shared prediction text should include the user's strategy");
 assert.match(appSource, /风险等级/, "shared prediction text should include risk level");
+assert.match(appSource, /让球/, "shared strategy text should include spread strategy");
+assert.match(appSource, /大小球/, "shared strategy text should include totals strategy");
+assert.match(appSource, /波胆/, "shared strategy text should include correct-score strategy");
+assert.match(appSource, /开球/, "shared strategy text should include kickoff strategy");
+assert.match(appSource, /角球/, "shared strategy text should include corner strategy");
 assert.match(appSource, /initialMatchIndex/, "app.js should choose the nearest relevant match on page load");
 assert.match(appSource, /filter\(\(item\) => item\.kickoffTime >= nowTime\)/, "initial match should prefer upcoming matches");
 assert.match(appSource, /elements\.matchSelect\.value = String\(state\.matchIndex\)/, "match selector should sync to the initial match");
@@ -46,6 +58,9 @@ assert.match(netlifyConfig, /included_files\s*=\s*\["data\/matches\.json"\]/, "n
 assert.match(await readFile("netlify/functions/predictions.mjs", "utf8"), /predictions/, "predictions function should persist predictions");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /FOOTBALL_DATA_API_KEY/, "real data updater should support football-data.org");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /TEAM_RATINGS_SOURCE_URL/, "real data updater should support external rating input");
+assert.match(await readFile("scripts/update-market-odds.mjs", "utf8"), /ODDS_API_MARKETS/, "odds updater should allow expanded market selection");
+assert.match(await readFile("scripts/update-market-odds.mjs", "utf8"), /spreads/, "odds updater should support spread markets");
+assert.match(await readFile("scripts/update-market-odds.mjs", "utf8"), /totals/, "odds updater should support totals markets");
 assert.match(autoUpdateWorkflow, /node scripts\/update-real-data\.mjs/, "scheduled data workflow should refresh match and rating caches");
 assert.match(autoUpdateWorkflow, /node scripts\/update-market-odds\.mjs/, "scheduled data workflow should refresh market odds cache");
 assert.match(autoUpdateWorkflow, /cron: "\*\/30 16-23 \* \* \*"/, "scheduled data workflow should update every 30 minutes during the UTC match evening window");

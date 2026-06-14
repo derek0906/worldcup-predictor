@@ -466,9 +466,11 @@ const elements = {
   upsetReasonTitle: $("#upsetReasonTitle"),
   upsetReason: $("#upsetReason"),
   aiSummary: $("#aiSummary"),
-  verdictTitle: $("#verdictTitle"),
-  verdictCopy: $("#verdictCopy"),
-  copyButton: $("#copyButton"),
+  radarTitle: $("#radarTitle"),
+  radarSteady: $("#radarSteady"),
+  radarUpset: $("#radarUpset"),
+  radarTempo: $("#radarTempo"),
+  radarCopy: $("#radarCopy"),
   predictionPanel: $("#predictionPanel"),
   predictionForm: $("#predictionForm"),
   nicknameInput: $("#nicknameInput"),
@@ -480,6 +482,8 @@ const elements = {
   confidenceValue: $("#confidenceValue"),
   submitPredictionButton: $("#submitPredictionButton"),
   copyMyPredictionButton: $("#copyMyPredictionButton"),
+  copyMultiStrategyButton: $("#copyMultiStrategyButton"),
+  strategyMain: $("#strategyMain"),
   strategyTitle: $("#strategyTitle"),
   strategyPick: $("#strategyPick"),
   strategyScore: $("#strategyScore"),
@@ -852,54 +856,123 @@ function buildPredictionComparison(match, result, draft) {
     : `你和模型分歧明显，模型更偏 ${pickLabel(model, result)}，你更看好 ${pickLabel(userPick, result)}。`;
 }
 
-function buildStrategyCard(match, result, draft) {
+function marketTopPick(market) {
+  if (!market?.winner) return "";
+  return Object.entries({
+    home: impliedProbability(market.winner.home),
+    draw: impliedProbability(market.winner.draw),
+    away: impliedProbability(market.winner.away),
+  }).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function pickProbability(pick, result) {
+  if (pick === "home") return result.homeProb;
+  if (pick === "away") return result.awayProb;
+  return result.drawProb;
+}
+
+function marketProbability(pick, market) {
+  if (!market?.winner?.[pick]) return null;
+  return impliedProbability(market.winner[pick]);
+}
+
+function spreadText(market, pick, result) {
+  const spread = market?.spreads;
+  if (!spread || typeof spread.line !== "number") {
+    return "让球：暂无让球数据，按胜平负方向保守处理";
+  }
+
+  const side = spread.side === "away" ? result.away.name : result.home.name;
+  const line = spread.line > 0 ? `+${spread.line}` : String(spread.line);
+  const price = typeof spread.price === "number" ? ` @${spread.price.toFixed(2)}` : "";
+  const caution = pick === spread.side ? "同向可纳入主策略" : "与主方向不同，建议谨慎";
+  return `让球：${side} ${line}${price}，${caution}`;
+}
+
+function totalsText(market, result) {
+  const total = market?.totals;
+  const modelGoals = result.homeGoals + result.awayGoals;
+  if (!total || typeof total.line !== "number") {
+    return `大小球：暂无大小球盘口，模型进球数 ${modelGoals}`;
+  }
+
+  const lean = modelGoals > total.line ? "偏大" : modelGoals < total.line ? "偏小" : "贴线";
+  const over = typeof total.over === "number" ? total.over.toFixed(2) : "--";
+  const under = typeof total.under === "number" ? total.under.toFixed(2) : "--";
+  return `大小球：${total.line}，模型 ${modelGoals} 球，${lean}；大 ${over} / 小 ${under}`;
+}
+
+function correctScoreText(market, draft, result) {
+  const userScore = `${Number(draft?.scoreHome ?? result.homeGoals)}-${Number(draft?.scoreAway ?? result.awayGoals)}`;
+  const modelScore = `${result.homeGoals}-${result.awayGoals}`;
+  const scores = Array.isArray(market?.correctScore) ? market.correctScore.slice(0, 3) : [];
+  if (scores.length === 0) {
+    return `波胆：我的 ${userScore}，模型 ${modelScore}，暂无市场低赔波胆`;
+  }
+  return `波胆：我的 ${userScore}，模型 ${modelScore}，低赔 ${scores.map((item) => item.score).join("/")}`;
+}
+
+function kickoffText(result) {
+  return `开球：${result.kickoffWinner.name} ${result.kickoffProb}%（样本 ${result.kickoffWinnerHistory.sample} 场）`;
+}
+
+function cornerText(market) {
+  const corners = market?.corners;
+  if (!corners || typeof corners.line !== "number") {
+    return "角球：暂无角球数据，不纳入主策略";
+  }
+  const lean = typeof corners.over === "number" && typeof corners.under === "number" && corners.over < corners.under
+    ? "大角偏热"
+    : "小角或均衡";
+  const over = typeof corners.over === "number" ? corners.over.toFixed(2) : "--";
+  const under = typeof corners.under === "number" ? corners.under.toFixed(2) : "--";
+  return `角球：${lean}，线 ${corners.line}，大 ${over} / 小 ${under}`;
+}
+
+function riskText(pick, result, confidence) {
+  const prob = pickProbability(pick, result);
+  if (pick !== modelPick(result) || prob <= 30) return "风险 高";
+  if (confidence >= 80 && prob >= 55) return "风险 中低";
+  if (result.upsetProb >= 35 || result.drawProb >= 30) return "风险 中高";
+  return "风险 中";
+}
+
+function buildExpandedStrategyCard(match, result, draft) {
   const pick = draft?.pick || modelPick(result);
   const confidence = Number(draft?.confidence || 70);
   const scoreHome = Number(draft?.scoreHome ?? result.homeGoals);
   const scoreAway = Number(draft?.scoreAway ?? result.awayGoals);
   const model = modelPick(result);
-  const modelProb = model === "home" ? result.homeProb : model === "away" ? result.awayProb : result.drawProb;
-  const pickProb = pick === "home" ? result.homeProb : pick === "away" ? result.awayProb : result.drawProb;
+  const modelProb = pickProbability(model, result);
+  const pickProb = pickProbability(pick, result);
   const totalGoals = scoreHome + scoreAway;
   const market = marketOddsCache[matchCacheKey(match)];
-  let marketSplit = false;
-  if (market?.winner) {
-    const implied = {
-      home: impliedProbability(market.winner.home),
-      draw: impliedProbability(market.winner.draw),
-      away: impliedProbability(market.winner.away),
-    };
-    marketSplit = Object.entries(implied).sort((a, b) => b[1] - a[1])[0][0] !== pick;
-  }
+  const marketPick = marketTopPick(market);
+  const marketSplit = marketPick && marketPick !== pick;
+  const marketProb = marketProbability(pick, market);
 
   let title = "顺势跟模型";
-  let risk = "风险等级：中";
   let edge = "策略标签：模型同路";
   let reason = `跟随模型更高概率方向，重点看 ${pickLabel(pick, result)} 能否先进入比赛节奏。`;
 
   if (pick !== model) {
     title = pickProb <= 30 ? "冷门反打" : "分歧博弈";
-    risk = pickProb <= 30 ? "风险等级：高" : "风险等级：中高";
     edge = "策略标签：反市场情绪";
     reason = `我和模型分歧，选择 ${pickLabel(pick, result)}，赌的是比赛走势和临场变量。`;
   } else if (confidence >= 80 && pickProb >= modelProb) {
     title = "高信心稳胆";
-    risk = "风险等级：中低";
     edge = "策略标签：稳健主线";
     reason = `方向、模型和信心值一致，策略是少走偏门，押主线兑现。`;
   } else if (pick === "draw") {
     title = "平局防守";
-    risk = "风险等级：中高";
     edge = "策略标签：防守反向";
     reason = "这场平局权重不低，策略是避开强行分胜负，抓胶着局。";
   } else if (totalGoals >= 4) {
     title = "进球大战";
-    risk = "风险等级：中高";
     edge = "策略标签：节奏进攻";
     reason = `比分给到 ${scoreHome}-${scoreAway}，策略是看好比赛打开，前段节奏很关键。`;
   } else if (confidence < 55) {
     title = "轻仓试探";
-    risk = "风险等级：中";
     edge = "策略标签：低信心观察";
     reason = "信心值不高，策略是小注观察，不把这场当成稳胆。";
   }
@@ -908,15 +981,34 @@ function buildStrategyCard(match, result, draft) {
     edge = "策略标签：模型市场分歧";
   }
 
+  const risk = riskText(pick, result, confidence);
+  const winStrategy = `胜平负策略：${pickLabel(pick, result)}，模型 ${pickProb}%${marketProb ? `，市场隐含 ${marketProb.toFixed(1)}%` : ""}`;
+  const spreadStrategy = spreadText(market, pick, result);
+  const totalsStrategy = totalsText(market, result);
+  const scoreStrategy = correctScoreText(market, { scoreHome, scoreAway }, result);
+  const kickoffStrategy = kickoffText(result);
+  const cornerStrategy = cornerText(market);
+
   return {
     title,
     pickLabel: pickLabel(pick, result),
     score: `${scoreHome}-${scoreAway}`,
     confidence: `${confidence}%`,
     reason,
-    risk,
+    risk: `风险等级：${risk.replace("风险 ", "")}`,
     edge,
+    winStrategy,
+    spreadStrategy,
+    totalsStrategy,
+    scoreStrategy,
+    kickoffStrategy,
+    cornerStrategy,
+    compact: `${result.home.name} vs ${result.away.name}｜${pickLabel(pick, result)} + ${spreadStrategy.replace("让球：", "")}｜${scoreStrategy.replace("波胆：", "")}｜${kickoffStrategy.replace("开球：", "开球 ")}｜${cornerStrategy.replace("角球：", "角球 ")}｜${risk}`,
   };
+}
+
+function buildStrategyCard(match, result, draft) {
+  return buildExpandedStrategyCard(match, result, draft);
 }
 
 function renderStrategyCard(match, result, draft) {
@@ -928,6 +1020,53 @@ function renderStrategyCard(match, result, draft) {
   elements.strategyReason.textContent = strategy.reason;
   elements.strategyRisk.textContent = strategy.risk;
   elements.strategyEdge.textContent = strategy.edge;
+  elements.strategyMain.innerHTML = [
+    ["胜平负策略", strategy.winStrategy],
+    ["让球/大小球策略", `${strategy.spreadStrategy}；${strategy.totalsStrategy}`],
+    ["波胆策略", strategy.scoreStrategy],
+    ["开球/角球策略", `${strategy.kickoffStrategy}；${strategy.cornerStrategy}`],
+  ]
+    .map(([label, value]) => `
+      <div>
+        <span>${label}</span>
+        <strong>${value}</strong>
+      </div>
+    `)
+    .join("");
+}
+
+function buildBettingRadar(match, result) {
+  const market = marketOddsCache[matchCacheKey(match)];
+  const model = modelPick(result);
+  const marketPick = marketTopPick(market);
+  const steady =
+    marketPick && marketPick === model
+      ? `${pickLabel(model, result)}同路`
+      : `${pickLabel(model, result)}模型优先`;
+  const upset = result.upsetProb >= 35 || (marketPick && marketPick !== model)
+    ? "冷门可聊"
+    : "冷门一般";
+  const tempo = result.homeGoals + result.awayGoals >= 4
+    ? "偏大球"
+    : result.drawProb >= 30
+      ? "偏胶着"
+      : "节奏中性";
+  return {
+    title: market?.winner ? "模型 + 市场一起看" : "模型雷达",
+    steady,
+    upset,
+    tempo,
+    copy: `${steady}，${upset}，${tempo}。策略卡里再看让球、大小球、波胆、开球和角球。`,
+  };
+}
+
+function renderBettingRadar(match, result) {
+  const radar = buildBettingRadar(match, result);
+  elements.radarTitle.textContent = radar.title;
+  elements.radarSteady.textContent = radar.steady;
+  elements.radarUpset.textContent = radar.upset;
+  elements.radarTempo.textContent = radar.tempo;
+  elements.radarCopy.textContent = radar.copy;
 }
 
 function buildFunTags(match, result) {
@@ -1218,22 +1357,78 @@ async function submitPrediction(match) {
 function buildMyPredictionShare(match, result) {
   const draft = saveCurrentDraft(match);
   const strategy = buildStrategyCard(match, result, draft);
-  const side = pickLabel(draft.pick, result);
   const homeName = result.home.name;
   const awayName = result.away.name;
   return [
-    `我的世界杯策略卡：${homeName} vs ${awayName}`,
-    `下注策略：${strategy.title}`,
-    `看好方向：${side}`,
-    `预测比分：${strategy.score}`,
-    `信心值：${strategy.confidence}`,
+    `我的世界杯下注策略卡：${homeName} vs ${awayName}`,
+    `我的主策略：${strategy.title}`,
+    strategy.winStrategy,
+    `${strategy.spreadStrategy}；${strategy.totalsStrategy}`,
+    strategy.scoreStrategy,
+    `${strategy.kickoffStrategy}；${strategy.cornerStrategy}`,
     strategy.risk,
     strategy.edge,
     `策略理由：${strategy.reason}`,
-    `模型推荐：${result.homeGoals}-${result.awayGoals}，${topPickText(result)}`,
-    buildPredictionComparison(match, result, draft),
     "仅供朋友局娱乐，不构成投注建议。",
   ].join("\n");
+}
+
+function sameChinaDate(match, now = new Date()) {
+  if (!match.kickoffAt) return false;
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return formatter.format(new Date(match.kickoffAt)) === formatter.format(now);
+}
+
+function multiStrategyMatches(now = new Date()) {
+  const upcoming = matches
+    .map((match, index) => ({ match, index }))
+    .filter(({ match }) => !hasKickedOff(match))
+    .sort((a, b) => new Date(a.match.kickoffAt || 0) - new Date(b.match.kickoffAt || 0));
+  const today = upcoming.filter(({ match }) => sameChinaDate(match, now));
+  return (today.length > 0 ? today : upcoming.slice(0, 3)).map(({ match }) => match);
+}
+
+function buildMultiMatchStrategyShare() {
+  const selected = multiStrategyMatches();
+  const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
+  const rows = selected.map((match) => {
+    const result = predict(match);
+    const draft = drafts[matchCacheKey(match)] || currentDraft(match, result);
+    return buildStrategyCard(match, result, draft);
+  });
+  const steadyCount = rows.filter((row) => row.risk.includes("中低") || row.edge.includes("稳健")).length;
+  const upsetCount = rows.filter((row) => row.title.includes("冷门") || row.edge.includes("分歧")).length;
+  const cornerHotCount = rows.filter((row) => row.cornerStrategy.includes("大角偏热")).length;
+  const summary = `今日策略：${steadyCount}场稳胆，${upsetCount}场冷门观察，角球偏大${cornerHotCount}场。`;
+  return [
+    summary,
+    ...rows.map((row) => row.compact),
+    "仅供朋友局娱乐，不构成投注建议。",
+  ].join("\n");
+}
+
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.append(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  textarea.remove();
+  if (!copied) throw new Error("copy failed");
 }
 
 function localAiFallback(payload) {
@@ -1424,6 +1619,7 @@ function render() {
   elements.friendCopy.textContent = watch.friendCopy;
   renderFunTags(match, result);
   renderPredictionForm(match, result);
+  renderBettingRadar(match, result);
   renderMarket(match, result);
 
   elements.confidenceBadge.textContent = analysis.confidence;
@@ -1436,8 +1632,6 @@ function render() {
   elements.upsetReasonTitle.textContent = analysis.upsetReasonTitle;
   elements.upsetReason.textContent = analysis.upsetReason;
 
-  elements.verdictTitle.textContent = verdict.title;
-  elements.verdictCopy.textContent = verdict.copy;
   elements.aiSummary.textContent = cachedAiText(match, latestPayload);
   elements.aiSummary.classList.remove("loading");
 }
@@ -1503,7 +1697,7 @@ async function init() {
     const match = matches[state.matchIndex];
     const result = predict(match);
     try {
-      await navigator.clipboard.writeText(buildMyPredictionShare(match, result));
+      await copyText(buildMyPredictionShare(match, result));
       elements.toast.classList.add("show");
       setTimeout(() => elements.toast.classList.remove("show"), 1300);
     } catch {
@@ -1511,17 +1705,13 @@ async function init() {
     }
   });
 
-  elements.copyButton.addEventListener("click", async () => {
-    const share = `${elements.verdictTitle.textContent}\n${elements.verdictCopy.textContent}\n爆冷概率：${elements.upsetProb.textContent}（${elements.upsetLabel.textContent}）\n开球方习惯预测：${elements.kickoffTeam.textContent}\n\n${elements.aiSummary.textContent}`;
+  elements.copyMultiStrategyButton.addEventListener("click", async () => {
     try {
-      await navigator.clipboard.writeText(share);
+      await copyText(buildMultiMatchStrategyShare());
       elements.toast.classList.add("show");
       setTimeout(() => elements.toast.classList.remove("show"), 1300);
     } catch {
-      elements.copyButton.textContent = "复制失败";
-      setTimeout(() => {
-        elements.copyButton.textContent = "复制分享文案";
-      }, 1300);
+      elements.predictionNotice.textContent = "复制失败，可以手动选择多场策略文字。";
     }
   });
 
