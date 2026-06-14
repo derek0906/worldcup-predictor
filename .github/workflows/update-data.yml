@@ -2,7 +2,11 @@ name: Update data caches
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    # Match window in UTC, covering late night to noon in Asia/Shanghai.
+    - cron: "*/30 16-23 * * *"
+    - cron: "*/30 0-5 * * *"
+    # Low-frequency catch-up outside the usual match window.
+    - cron: "17 6,12 * * *"
   workflow_dispatch:
 
 permissions:

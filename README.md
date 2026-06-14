@@ -90,7 +90,10 @@ node scripts/update-real-data.mjs
 
 ## 自动数据更新
 
-网站读取的是仓库里的 JSON 缓存，不会把第三方 API key 暴露给访客。仓库内的 GitHub Actions 会每 6 小时运行一次 `.github/workflows/update-data.yml`：
+网站读取的是仓库里的 JSON 缓存，不会把第三方 API key 暴露给访客。仓库内的 GitHub Actions 会运行 `.github/workflows/update-data.yml`：
+
+- 比赛窗口：UTC 16:00-05:59，每 30 分钟更新一次，覆盖北京时间凌晨到中午的主要比赛时段。
+- 非比赛窗口：UTC 06:17 和 12:17 低频兜底更新，避免 API 调用太密。
 
 ```bash
 node scripts/update-real-data.mjs

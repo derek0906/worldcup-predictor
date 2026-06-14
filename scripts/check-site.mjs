@@ -42,6 +42,9 @@ assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /FOOTBALL_D
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /TEAM_RATINGS_SOURCE_URL/, "real data updater should support external rating input");
 assert.match(autoUpdateWorkflow, /node scripts\/update-real-data\.mjs/, "scheduled data workflow should refresh match and rating caches");
 assert.match(autoUpdateWorkflow, /node scripts\/update-market-odds\.mjs/, "scheduled data workflow should refresh market odds cache");
+assert.match(autoUpdateWorkflow, /cron: "\*\/30 16-23 \* \* \*"/, "scheduled data workflow should update every 30 minutes during the UTC match evening window");
+assert.match(autoUpdateWorkflow, /cron: "\*\/30 0-5 \* \* \*"/, "scheduled data workflow should update every 30 minutes during the UTC match early window");
+assert.match(autoUpdateWorkflow, /cron: "17 6,12 \* \* \*"/, "scheduled data workflow should keep a low-frequency off-window catch-up");
 assert.match(autoUpdateWorkflow, /FOOTBALL_DATA_API_KEY: \$\{\{ secrets\.FOOTBALL_DATA_API_KEY \}\}/, "scheduled data workflow should read football-data key from GitHub Secrets");
 assert.match(autoUpdateWorkflow, /ODDS_API_KEY: \$\{\{ secrets\.ODDS_API_KEY \}\}/, "scheduled data workflow should read odds key from GitHub Secrets");
 assert.match(autoUpdateWorkflow, /file_pattern: data\/matches\.json data\/team-ratings\.json data\/model-inputs\.json data\/market-odds\.json/, "scheduled data workflow should only auto-commit data cache files");
