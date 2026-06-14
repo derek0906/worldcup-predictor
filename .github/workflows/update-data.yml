@@ -1,15 +1,19 @@
-name: Update market odds
+name: Update data caches
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: update-data-caches
+  cancel-in-progress: true
+
 jobs:
-  update-market-odds:
+  update-data:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,6 +23,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: Update match and rating caches
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          FOOTBALL_DATA_COMPETITION: ${{ vars.FOOTBALL_DATA_COMPETITION }}
+          FOOTBALL_DATA_SEASON: ${{ vars.FOOTBALL_DATA_SEASON }}
+          TEAM_RATINGS_SOURCE_URL: ${{ secrets.TEAM_RATINGS_SOURCE_URL }}
+        run: node scripts/update-real-data.mjs
 
       - name: Update market odds cache
         env:
@@ -30,8 +42,11 @@ jobs:
           MARKET_ODDS_BEARER_TOKEN: ${{ secrets.MARKET_ODDS_BEARER_TOKEN }}
         run: node scripts/update-market-odds.mjs
 
-      - name: Commit updated odds
+      - name: Check site data
+        run: node scripts/check-site.mjs
+
+      - name: Commit updated data
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update market odds cache"
-          file_pattern: data/market-odds.json
+          commit_message: "Update data caches"
+          file_pattern: data/matches.json data/team-ratings.json data/model-inputs.json data/market-odds.json

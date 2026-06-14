@@ -9,6 +9,7 @@ const appSource = await readFile("app.js", "utf8");
 const indexSource = await readFile("index.html", "utf8");
 const netlifyConfig = await readFile("netlify.toml", "utf8");
 const leaderboardStoreSource = await readFile("netlify/functions/_leaderboard-store.mjs", "utf8");
+const autoUpdateWorkflow = await readFile(".github/workflows/update-data.yml", "utf8").catch(() => "");
 const marketOdds = JSON.parse(await readFile("data/market-odds.json", "utf8"));
 const realMatches = JSON.parse(await readFile("data/matches.json", "utf8"));
 const teamRatings = JSON.parse(await readFile("data/team-ratings.json", "utf8"));
@@ -39,6 +40,11 @@ assert.match(netlifyConfig, /included_files\s*=\s*\["data\/matches\.json"\]/, "n
 assert.match(await readFile("netlify/functions/predictions.mjs", "utf8"), /predictions/, "predictions function should persist predictions");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /FOOTBALL_DATA_API_KEY/, "real data updater should support football-data.org");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /TEAM_RATINGS_SOURCE_URL/, "real data updater should support external rating input");
+assert.match(autoUpdateWorkflow, /node scripts\/update-real-data\.mjs/, "scheduled data workflow should refresh match and rating caches");
+assert.match(autoUpdateWorkflow, /node scripts\/update-market-odds\.mjs/, "scheduled data workflow should refresh market odds cache");
+assert.match(autoUpdateWorkflow, /FOOTBALL_DATA_API_KEY: \$\{\{ secrets\.FOOTBALL_DATA_API_KEY \}\}/, "scheduled data workflow should read football-data key from GitHub Secrets");
+assert.match(autoUpdateWorkflow, /ODDS_API_KEY: \$\{\{ secrets\.ODDS_API_KEY \}\}/, "scheduled data workflow should read odds key from GitHub Secrets");
+assert.match(autoUpdateWorkflow, /file_pattern: data\/matches\.json data\/team-ratings\.json data\/model-inputs\.json data\/market-odds\.json/, "scheduled data workflow should only auto-commit data cache files");
 
 assert.ok(Array.isArray(realMatches.matches), "data/matches.json should contain matches array");
 assert.ok(realMatches.meta?.updatedAt, "data/matches.json should include metadata");

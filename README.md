@@ -88,25 +88,42 @@ node scripts/update-real-data.mjs
 
 如果没有配置 API key，脚本会保留现有缓存，网站仍然可用。
 
-## 定时市场数据
+## 自动数据更新
 
-市场赔率观察读取 `data/market-odds.json`。仓库内的 GitHub Actions 会每 30 分钟运行一次：
+网站读取的是仓库里的 JSON 缓存，不会把第三方 API key 暴露给访客。仓库内的 GitHub Actions 会每 6 小时运行一次 `.github/workflows/update-data.yml`：
 
 ```bash
+node scripts/update-real-data.mjs
 node scripts/update-market-odds.mjs
+node scripts/check-site.mjs
 ```
+
+如果缓存文件有变化，Action 会自动提交：
+
+- `data/matches.json`
+- `data/team-ratings.json`
+- `data/model-inputs.json`
+- `data/market-odds.json`
+
+提交到 `main` 后，Netlify 会按 GitHub 连接自动重新部署。
 
 推荐配置方式：
 
 1. 在 GitHub 仓库设置 `Settings -> Secrets and variables -> Actions`。
-2. 如果使用 The Odds API，添加 Secret：`ODDS_API_KEY`。
-3. 可选添加 Variables：
+2. 添加 Secret：`FOOTBALL_DATA_API_KEY`，用于更新赛程、比分和比赛状态。
+3. 如果使用 The Odds API，添加 Secret：`ODDS_API_KEY`。
+4. 可选添加 Variables：
+   - `FOOTBALL_DATA_COMPETITION`，默认 `WC`
+   - `FOOTBALL_DATA_SEASON`，默认 `2026`
    - `ODDS_API_SPORT`，默认 `soccer_fifa_world_cup`
    - `ODDS_API_REGIONS`，默认 `us,uk,eu`
    - `ODDS_API_BOOKMAKERS`，留空则使用 API 默认 bookmaker
-4. 如果你有自己的授权数据源，添加 Secret：
+5. 如果你有自己的授权数据源，添加 Secret：
+   - `TEAM_RATINGS_SOURCE_URL`
    - `MARKET_ODDS_SOURCE_URL`
    - `MARKET_ODDS_BEARER_TOKEN`，如果接口需要 bearer token
+
+也可以在 GitHub Actions 页面手动点击 `Update data caches -> Run workflow` 立即刷新一次。
 
 `MARKET_ODDS_SOURCE_URL` 返回的数据建议直接使用网站内部格式：
 
@@ -124,7 +141,7 @@ node scripts/update-market-odds.mjs
 
 网站只展示隐含概率、返还率和风险观察，不输出具体购买建议。
 
-如果没有配置 `ODDS_API_KEY` 或 `MARKET_ODDS_SOURCE_URL`，脚本会直接跳过更新，不会重写旧缓存。
+如果没有配置对应 Secret，脚本会保留旧缓存或跳过该数据源，不会把 key 写入仓库。
 
 ## 后续可丰富的内容
 
