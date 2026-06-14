@@ -32,6 +32,10 @@ assert.match(indexSource, /id="predictionPanel"/, "index.html should include pre
 assert.match(indexSource, /id="leaderboardRows"/, "index.html should include leaderboard rows");
 assert.match(indexSource, /id="strategyCard"/, "index.html should include a shareable strategy card");
 assert.match(indexSource, /id="strategyTitle"/, "index.html should show the user's strategy title");
+assert.match(indexSource, /id="spreadChoice"/, "prediction form should let users choose their own spread strategy");
+assert.match(indexSource, /id="totalChoice"/, "prediction form should let users choose their own totals strategy");
+assert.match(indexSource, /id="cornerChoice"/, "prediction form should let users choose their own corner strategy");
+assert.match(indexSource, /id="riskChoice"/, "prediction form should let users choose their own risk style");
 assert.match(appSource, /loadLeaderboard/, "app.js should load shared leaderboard");
 assert.match(appSource, /submitPrediction/, "app.js should submit user predictions");
 assert.match(appSource, /buildFunTags/, "app.js should render fun tags");
@@ -40,6 +44,10 @@ assert.match(appSource, /renderStrategyCard/, "app.js should render the strategy
 assert.match(appSource, /buildBettingRadar/, "app.js should build the betting radar replacement for quick judgment");
 assert.match(appSource, /buildExpandedStrategyCard/, "app.js should build expanded betting strategy sections");
 assert.match(appSource, /buildMultiMatchStrategyShare/, "app.js should build compact multi-match strategy copy");
+assert.match(appSource, /userStrategyChoiceText/, "strategy card should be built from user-selected strategy choices");
+assert.match(appSource, /我的选择/, "shared strategy copy should emphasize the user's own choices");
+assert.match(appSource, /SHARE_SITE_URL/, "shared strategy copy should include a reusable site URL");
+assert.match(appSource, /来这里生成你的策略/, "shared strategy copy should invite friends back to the site");
 assert.match(appSource, /下注策略/, "shared prediction text should include the user's strategy");
 assert.match(appSource, /风险等级/, "shared prediction text should include risk level");
 assert.match(appSource, /让球/, "shared strategy text should include spread strategy");

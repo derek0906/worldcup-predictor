@@ -570,7 +570,8 @@ select {
 }
 
 .prediction-field input[type="text"],
-.prediction-field input[type="number"] {
+.prediction-field input[type="number"],
+.prediction-field select {
   width: 100%;
   min-height: 42px;
   padding: 0 12px;
@@ -579,6 +580,14 @@ select {
   color: var(--ink);
   background: var(--surface-soft);
   font: inherit;
+}
+
+.prediction-field select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--green-dark) 50%) right 14px center / 7px 7px no-repeat,
+    linear-gradient(135deg, var(--green-dark) 50%, transparent 50%) right 9px center / 7px 7px no-repeat,
+    var(--surface-soft);
 }
 
 .pick-buttons {
@@ -608,6 +617,18 @@ select {
   display: grid;
   grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1fr);
   gap: 12px;
+}
+
+.strategy-builder {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(15, 139, 95, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(15, 139, 95, 0.08), rgba(245, 184, 67, 0.1)),
+    #fbfcfc;
 }
 
 .score-inputs {
@@ -1184,6 +1205,7 @@ select {
 
   .score-confidence-grid,
   .pick-buttons,
+  .strategy-builder,
   .strategy-main {
     grid-template-columns: 1fr;
   }

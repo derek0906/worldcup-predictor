@@ -480,6 +480,10 @@ const elements = {
   scoreAwayInput: $("#scoreAwayInput"),
   confidenceInput: $("#confidenceInput"),
   confidenceValue: $("#confidenceValue"),
+  spreadChoice: $("#spreadChoice"),
+  totalChoice: $("#totalChoice"),
+  cornerChoice: $("#cornerChoice"),
+  riskChoice: $("#riskChoice"),
   submitPredictionButton: $("#submitPredictionButton"),
   copyMyPredictionButton: $("#copyMyPredictionButton"),
   copyMultiStrategyButton: $("#copyMultiStrategyButton"),
@@ -508,6 +512,7 @@ let leaderboardCache = { rows: [], recent: [], note: "娱乐榜单，非严格�
 
 const DEVICE_ID_KEY = "worldcupPredictorDeviceId";
 const PREDICTION_DRAFTS_KEY = "worldcupPredictorDrafts";
+const SHARE_SITE_URL = "https://storied-blini-c17d9b.netlify.app/";
 
 function storageGet(key, fallback) {
   try {
@@ -929,6 +934,64 @@ function cornerText(market) {
   return `角球：${lean}，线 ${corners.line}，大 ${over} / 小 ${under}`;
 }
 
+function strategyChoiceLabel(type, value) {
+  const labels = {
+    spread: {
+      none: "暂不选让球",
+      follow: "跟让球方向",
+      avoid: "避开让球，只看胜平负",
+    },
+    total: {
+      none: "暂不选大小球",
+      over: "看大球",
+      under: "看小球",
+    },
+    corner: {
+      none: "暂不选角球",
+      over: "角球偏大",
+      under: "角球偏小",
+    },
+    risk: {
+      steady: "稳一点",
+      medium: "中等风险",
+      upset: "冷门搏一手",
+    },
+  };
+  return labels[type]?.[value] || labels[type]?.none || "";
+}
+
+function userStrategyChoiceText(draft, result) {
+  const pick = pickLabel(draft.pick || modelPick(result), result);
+  const score = `${Number(draft.scoreHome ?? result.homeGoals)}-${Number(draft.scoreAway ?? result.awayGoals)}`;
+  const parts = [
+    pick,
+    strategyChoiceLabel("total", draft.totalChoice),
+    strategyChoiceLabel("corner", draft.cornerChoice),
+  ].filter((part) => part && !part.startsWith("暂不选"));
+  return `我的选择：${parts.join(" + ") || pick}｜波胆 ${score}｜${strategyChoiceLabel("risk", draft.riskChoice)}`;
+}
+
+function selectedSpreadText(market, draft, pick, result) {
+  const choice = draft.spreadChoice || "none";
+  if (choice === "none") return "让球：我的选择是暂不选让球";
+  const reference = spreadText(market, pick, result).replace("让球：", "");
+  return `让球：我的选择是${strategyChoiceLabel("spread", choice)}；盘口参考 ${reference}`;
+}
+
+function selectedTotalsText(market, draft, result) {
+  const choice = draft.totalChoice || "none";
+  if (choice === "none") return "大小球：我的选择是暂不选大小球";
+  const reference = totalsText(market, result).replace("大小球：", "");
+  return `大小球：我的选择是${strategyChoiceLabel("total", choice)}；盘口参考 ${reference}`;
+}
+
+function selectedCornerText(market, draft) {
+  const choice = draft.cornerChoice || "none";
+  if (choice === "none") return "角球：我的选择是暂不选角球";
+  const reference = cornerText(market).replace("角球：", "");
+  return `角球：我的选择是${strategyChoiceLabel("corner", choice)}；盘口参考 ${reference}`;
+}
+
 function riskText(pick, result, confidence) {
   const prob = pickProbability(pick, result);
   if (pick !== modelPick(result) || prob <= 30) return "风险 高";
@@ -988,22 +1051,28 @@ function buildExpandedStrategyCard(match, result, draft) {
   const scoreStrategy = correctScoreText(market, { scoreHome, scoreAway }, result);
   const kickoffStrategy = kickoffText(result);
   const cornerStrategy = cornerText(market);
+  const userChoice = userStrategyChoiceText(draft, result);
+  const selectedSpreadStrategy = selectedSpreadText(market, draft, pick, result);
+  const selectedTotalsStrategy = selectedTotalsText(market, draft, result);
+  const selectedCornerStrategy = selectedCornerText(market, draft);
+  const selectedRisk = strategyChoiceLabel("risk", draft.riskChoice);
 
   return {
-    title,
+    title: selectedRisk === "冷门搏一手" ? "我的冷门策略" : selectedRisk === "稳一点" ? "我的稳胆策略" : "我的自选策略",
     pickLabel: pickLabel(pick, result),
     score: `${scoreHome}-${scoreAway}`,
     confidence: `${confidence}%`,
-    reason,
-    risk: `风险等级：${risk.replace("风险 ", "")}`,
-    edge,
-    winStrategy,
-    spreadStrategy,
-    totalsStrategy,
+    reason: `${userChoice}。${reason}`,
+    risk: `风险等级：${selectedRisk || risk.replace("风险 ", "")}`,
+    edge: "策略标签：用户自选",
+    winStrategy: `胜平负策略：我的选择 ${pickLabel(pick, result)}，模型 ${pickProb}%${marketProb ? `，市场隐含 ${marketProb.toFixed(1)}%` : ""}`,
+    spreadStrategy: selectedSpreadStrategy,
+    totalsStrategy: selectedTotalsStrategy,
     scoreStrategy,
     kickoffStrategy,
-    cornerStrategy,
-    compact: `${result.home.name} vs ${result.away.name}｜${pickLabel(pick, result)} + ${spreadStrategy.replace("让球：", "")}｜${scoreStrategy.replace("波胆：", "")}｜${kickoffStrategy.replace("开球：", "开球 ")}｜${cornerStrategy.replace("角球：", "角球 ")}｜${risk}`,
+    cornerStrategy: selectedCornerStrategy,
+    userChoice,
+    compact: `${result.home.name} vs ${result.away.name}｜${userChoice.replace("我的选择：", "")}｜${selectedSpreadStrategy.replace("让球：我的选择是", "让球 ")}｜${selectedCornerStrategy.replace("角球：我的选择是", "角球 ")}｜风险 ${selectedRisk}`,
   };
 }
 
@@ -1204,6 +1273,10 @@ function currentDraft(match, result) {
     scoreHome: result.homeGoals,
     scoreAway: result.awayGoals,
     confidence: 70,
+    spreadChoice: "none",
+    totalChoice: "none",
+    cornerChoice: "none",
+    riskChoice: "medium",
   };
 }
 
@@ -1215,6 +1288,10 @@ function saveCurrentDraft(match) {
     scoreHome: Number(elements.scoreHomeInput.value || 0),
     scoreAway: Number(elements.scoreAwayInput.value || 0),
     confidence: Number(elements.confidenceInput.value || 70),
+    spreadChoice: elements.spreadChoice.value,
+    totalChoice: elements.totalChoice.value,
+    cornerChoice: elements.cornerChoice.value,
+    riskChoice: elements.riskChoice.value,
   };
   storageSet(PREDICTION_DRAFTS_KEY, drafts);
   return drafts[matchCacheKey(match)];
@@ -1243,6 +1320,10 @@ function renderPredictionForm(match, result) {
   elements.scoreHomeInput.value = String(draft.scoreHome ?? result.homeGoals);
   elements.scoreAwayInput.value = String(draft.scoreAway ?? result.awayGoals);
   elements.confidenceInput.value = String(draft.confidence ?? 70);
+  elements.spreadChoice.value = draft.spreadChoice || "none";
+  elements.totalChoice.value = draft.totalChoice || "none";
+  elements.cornerChoice.value = draft.cornerChoice || "none";
+  elements.riskChoice.value = draft.riskChoice || "medium";
   elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
   renderPickButtons(result);
   renderStrategyCard(match, result, draft);
@@ -1361,6 +1442,7 @@ function buildMyPredictionShare(match, result) {
   const awayName = result.away.name;
   return [
     `我的世界杯下注策略卡：${homeName} vs ${awayName}`,
+    strategy.userChoice,
     `我的主策略：${strategy.title}`,
     strategy.winStrategy,
     `${strategy.spreadStrategy}；${strategy.totalsStrategy}`,
@@ -1369,6 +1451,7 @@ function buildMyPredictionShare(match, result) {
     strategy.risk,
     strategy.edge,
     `策略理由：${strategy.reason}`,
+    `来这里生成你的策略：${SHARE_SITE_URL}`,
     "仅供朋友局娱乐，不构成投注建议。",
   ].join("\n");
 }
@@ -1408,6 +1491,7 @@ function buildMultiMatchStrategyShare() {
   return [
     summary,
     ...rows.map((row) => row.compact),
+    `来这里生成你的策略：${SHARE_SITE_URL}`,
     "仅供朋友局娱乐，不构成投注建议。",
   ].join("\n");
 }
@@ -1676,8 +1760,20 @@ async function init() {
     elements.scoreHomeInput,
     elements.scoreAwayInput,
     elements.confidenceInput,
+    elements.spreadChoice,
+    elements.totalChoice,
+    elements.cornerChoice,
+    elements.riskChoice,
   ].forEach((input) => {
     input.addEventListener("input", () => {
+      const match = matches[state.matchIndex];
+      const result = predict(match);
+      const draft = saveCurrentDraft(match);
+      elements.confidenceValue.textContent = `${elements.confidenceInput.value}%`;
+      renderStrategyCard(match, result, draft);
+      elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
+    });
+    input.addEventListener("change", () => {
       const match = matches[state.matchIndex];
       const result = predict(match);
       const draft = saveCurrentDraft(match);

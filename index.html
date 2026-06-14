@@ -11,9 +11,9 @@
       <header class="site-header">
         <div>
           <p class="eyebrow">FIFA World Cup 26</p>
-          <h1>赛前预测情报站</h1>
+          <h1>世界杯朋友局策略桌</h1>
         </div>
-        <div class="status-pill">中文预测模型</div>
+        <div class="status-pill">策略分享模式</div>
       </header>
 
       <section class="match-selector" aria-label="选择比赛">
@@ -151,7 +151,7 @@
         <div class="prediction-header">
           <div>
             <p class="card-label">朋友局互动</p>
-            <h2>我的预测 & 连红榜</h2>
+            <h2>组装我的策略 & 连红榜</h2>
           </div>
           <span id="leaderboardStatus" class="cache-pill">正在读取榜单</span>
         </div>
@@ -187,6 +187,44 @@
               <label class="prediction-field">
                 <span>信心值 <strong id="confidenceValue">70%</strong></span>
                 <input id="confidenceInput" type="range" min="1" max="100" value="70" />
+              </label>
+            </div>
+
+            <div class="strategy-builder" aria-label="组装我的下注策略">
+              <label class="prediction-field">
+                <span>让球策略</span>
+                <select id="spreadChoice">
+                  <option value="none">暂不选让球</option>
+                  <option value="follow">跟让球方向</option>
+                  <option value="avoid">避开让球，只看胜平负</option>
+                </select>
+              </label>
+
+              <label class="prediction-field">
+                <span>大小球</span>
+                <select id="totalChoice">
+                  <option value="none">暂不选大小球</option>
+                  <option value="over">看大球</option>
+                  <option value="under">看小球</option>
+                </select>
+              </label>
+
+              <label class="prediction-field">
+                <span>角球</span>
+                <select id="cornerChoice">
+                  <option value="none">暂不选角球</option>
+                  <option value="over">角球偏大</option>
+                  <option value="under">角球偏小</option>
+                </select>
+              </label>
+
+              <label class="prediction-field">
+                <span>风险风格</span>
+                <select id="riskChoice">
+                  <option value="medium">中等风险</option>
+                  <option value="steady">稳一点</option>
+                  <option value="upset">冷门搏一手</option>
+                </select>
               </label>
             </div>
 
