@@ -18,8 +18,23 @@
       </header>
 
       <section class="match-selector" aria-label="选择比赛">
-        <label class="field-label" for="matchSelect">选择比赛</label>
-        <select id="matchSelect"></select>
+        <div class="match-selector-main">
+          <label class="field-label" for="matchSelect">选择比赛</label>
+          <select id="matchSelect"></select>
+          <p id="matchSelectMeta" class="selector-meta"></p>
+        </div>
+        <div class="match-selector-tools">
+          <div id="matchQuickFilter" class="segmented-control" role="group" aria-label="快速筛选比赛">
+            <button class="selected" data-filter="today" type="button">今天</button>
+            <button data-filter="tomorrow" type="button">明天</button>
+            <button data-filter="upcoming" type="button">未开球</button>
+            <button data-filter="all" type="button">全部</button>
+          </div>
+          <label class="search-field" for="matchSearchInput">
+            <span>搜球队/小组</span>
+            <input id="matchSearchInput" type="search" placeholder="比如 德国 / G组" autocomplete="off" />
+          </label>
+        </div>
         <button id="predictButton" class="primary-button" type="button">换一场看看</button>
       </section>
 
@@ -228,6 +243,17 @@
                 </select>
               </label>
             </div>
+
+            <section id="multiScorePanel" class="multi-score-panel" aria-label="今日多场比分选择">
+              <div class="multi-score-head">
+                <div>
+                  <span>今日多场比分</span>
+                  <strong>一次填完再复制</strong>
+                </div>
+                <small id="multiScoreMeta"></small>
+              </div>
+              <div id="multiScoreList" class="multi-score-list"></div>
+            </section>
 
             <div class="prediction-actions">
               <button id="submitPredictionButton" class="primary-button" type="submit">提交到连红榜</button>

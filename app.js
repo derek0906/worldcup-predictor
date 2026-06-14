@@ -476,6 +476,8 @@ const kickoffHistory = {
 const state = {
   matchIndex: 0,
   userPick: "home",
+  matchFilter: "today",
+  matchSearch: "",
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -483,6 +485,9 @@ const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
 const elements = {
   matchSelect: $("#matchSelect"),
+  matchQuickFilter: $("#matchQuickFilter"),
+  matchSearchInput: $("#matchSearchInput"),
+  matchSelectMeta: $("#matchSelectMeta"),
   homeFlag: $("#homeFlag"),
   awayFlag: $("#awayFlag"),
   homeName: $("#homeName"),
@@ -553,6 +558,9 @@ const elements = {
   submitPredictionButton: $("#submitPredictionButton"),
   copyMyPredictionButton: $("#copyMyPredictionButton"),
   copyMultiStrategyButton: $("#copyMultiStrategyButton"),
+  multiScorePanel: $("#multiScorePanel"),
+  multiScoreList: $("#multiScoreList"),
+  multiScoreMeta: $("#multiScoreMeta"),
   strategyMain: $("#strategyMain"),
   strategyTitle: $("#strategyTitle"),
   strategyPick: $("#strategyPick"),
@@ -1051,6 +1059,19 @@ function userStrategyChoiceText(draft, result) {
   return `我的选择：${parts.join(" + ") || pick}｜波胆 ${score}｜${strategyChoiceLabel("risk", draft.riskChoice)}`;
 }
 
+function compactUserStrategyChoiceText(draft, result) {
+  const pick = pickLabel(draft.pick || modelPick(result), result);
+  const score = `${Number(draft.scoreHome ?? result.homeGoals)}-${Number(draft.scoreAway ?? result.awayGoals)}`;
+  return [
+    pick,
+    `波胆 ${score}`,
+    `让球 ${strategyChoiceLabel("spread", draft.spreadChoice)}`,
+    `大小球 ${strategyChoiceLabel("total", draft.totalChoice)}`,
+    `角球 ${strategyChoiceLabel("corner", draft.cornerChoice)}`,
+    `风险 ${strategyChoiceLabel("risk", draft.riskChoice)}`,
+  ].join("｜");
+}
+
 function selectedSpreadText(market, draft, pick, result) {
   const choice = draft.spreadChoice || "none";
   if (choice === "none") return "让球：我的选择是暂不选让球";
@@ -1152,7 +1173,7 @@ function buildExpandedStrategyCard(match, result, draft) {
     kickoffStrategy,
     cornerStrategy: selectedCornerStrategy,
     userChoice,
-    compact: `${result.home.name} vs ${result.away.name}｜${userChoice.replace("我的选择：", "")}｜${selectedSpreadStrategy.replace("让球：我的选择是", "让球 ")}｜${selectedCornerStrategy.replace("角球：我的选择是", "角球 ")}｜风险 ${selectedRisk}`,
+    compact: `${result.home.name} vs ${result.away.name}｜${compactUserStrategyChoiceText(draft, result)}`,
   };
 }
 
@@ -1377,6 +1398,19 @@ function saveCurrentDraft(match) {
   return drafts[matchCacheKey(match)];
 }
 
+function updateDraftForMatch(match, updates) {
+  const result = predict(match);
+  const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
+  const key = matchCacheKey(match);
+  drafts[key] = {
+    ...currentDraft(match, result),
+    ...(drafts[key] || {}),
+    ...updates,
+  };
+  storageSet(PREDICTION_DRAFTS_KEY, drafts);
+  return drafts[key];
+}
+
 function renderFunTags(match, result) {
   const tags = buildFunTags(match, result);
   elements.funTags.innerHTML = tags
@@ -1597,13 +1631,182 @@ function sameChinaDate(match, now = new Date()) {
   return formatter.format(new Date(match.kickoffAt)) === formatter.format(now);
 }
 
-function multiStrategyMatches(now = new Date()) {
+function chinaDateKey(value = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(value);
+}
+
+function matchChinaDateKey(match) {
+  if (!match.kickoffAt) return "";
+  return chinaDateKey(new Date(match.kickoffAt));
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function matchSearchText(match) {
+  const home = teams[match.home];
+  const away = teams[match.away];
+  return [
+    home?.name,
+    home?.short,
+    away?.name,
+    away?.short,
+    match.group,
+    match.venue,
+    match.date,
+    renderMatchStatus(match),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function filteredMatchEntries(now = new Date()) {
+  const query = state.matchSearch.trim().toLowerCase();
+  const todayKey = chinaDateKey(now);
+  const tomorrowKey = chinaDateKey(addDays(now, 1));
+
+  return matches
+    .map((match, index) => ({ match, index }))
+    .filter(({ match }) => {
+      if (state.matchFilter === "today") return matchChinaDateKey(match) === todayKey;
+      if (state.matchFilter === "tomorrow") return matchChinaDateKey(match) === tomorrowKey;
+      if (state.matchFilter === "upcoming") return !hasKickedOff(match);
+      return true;
+    })
+    .filter(({ match }) => !query || matchSearchText(match).includes(query));
+}
+
+function matchOptionText(match) {
+  const home = teams[match.home];
+  const away = teams[match.away];
+  return `${formatKickoff(match.kickoffAt)}｜${match.group}｜${home.name} vs ${away.name}｜${renderMatchStatus(match)}`;
+}
+
+function renderMatchSelectorOptions() {
+  const filtered = filteredMatchEntries();
+  const current = matches[state.matchIndex] ? { match: matches[state.matchIndex], index: state.matchIndex, pinned: true } : null;
+  const entries =
+    current && !filtered.some(({ index }) => index === current.index)
+      ? [current, ...filtered]
+      : filtered;
+
+  elements.matchSelect.innerHTML = "";
+
+  if (entries.length === 0) {
+    const option = document.createElement("option");
+    option.value = String(state.matchIndex);
+    option.textContent = "没有找到比赛，换个筛选试试";
+    elements.matchSelect.appendChild(option);
+    elements.matchSelectMeta.textContent = "当前筛选没有匹配结果";
+    return;
+  }
+
+  entries.forEach(({ match, index, pinned }) => {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = `${pinned ? "当前｜" : ""}${matchOptionText(match)}`;
+    elements.matchSelect.appendChild(option);
+  });
+
+  elements.matchSelect.value = String(state.matchIndex);
+  elements.matchSelectMeta.textContent =
+    entries.length === matches.length
+      ? `共 ${matches.length} 场，按开球时间排序`
+      : `显示 ${filtered.length} / ${matches.length} 场${current && entries[0]?.pinned ? "，已保留当前比赛" : ""}`;
+}
+
+function setMatchFilter(filter) {
+  state.matchFilter = filter;
+  elements.matchQuickFilter.querySelectorAll("button").forEach((button) => {
+    button.classList.toggle("selected", button.dataset.filter === filter);
+  });
+  renderMatchSelectorOptions();
+}
+
+function multiStrategySelection(now = new Date()) {
+  const sorted = matches
+    .map((match, index) => ({ match, index }))
+    .sort((a, b) => new Date(a.match.kickoffAt || 0) - new Date(b.match.kickoffAt || 0));
   const upcoming = matches
     .map((match, index) => ({ match, index }))
     .filter(({ match }) => !hasKickedOff(match))
     .sort((a, b) => new Date(a.match.kickoffAt || 0) - new Date(b.match.kickoffAt || 0));
-  const today = upcoming.filter(({ match }) => sameChinaDate(match, now));
-  return (today.length > 0 ? today : upcoming.slice(0, 3)).map(({ match }) => match);
+  const today = sorted.filter(({ match }) => sameChinaDate(match, now));
+  return {
+    matches: (today.length > 0 ? today : upcoming.slice(0, 3)).map(({ match }) => match),
+    mode: today.length > 0 ? "today" : "fallback",
+  };
+}
+
+function multiStrategyMatches(now = new Date()) {
+  return multiStrategySelection(now).matches;
+}
+
+function renderMultiScorePanel() {
+  const { matches: selected, mode } = multiStrategySelection();
+  const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
+  elements.multiScoreMeta.textContent =
+    mode === "today" ? `${selected.length} 场今日比赛` : "今天暂无比赛，显示最近 3 场未开球";
+
+  if (selected.length === 0) {
+    elements.multiScoreList.innerHTML = `<p class="market-note">暂无可填写的未开球比赛。</p>`;
+    return;
+  }
+
+  elements.multiScoreList.innerHTML = selected
+    .map((match) => {
+      const result = predict(match);
+      const key = matchCacheKey(match);
+      const draft = drafts[key] || currentDraft(match, result);
+      return `
+        <div class="multi-score-row" data-match-key="${escapeHtml(key)}">
+          <div class="multi-score-match">
+            <strong>${escapeHtml(result.home.name)} vs ${escapeHtml(result.away.name)}</strong>
+            <span>${escapeHtml(formatKickoff(match.kickoffAt))} · ${escapeHtml(match.group)}</span>
+          </div>
+          <div class="multi-score-inputs">
+            <input data-side="home" type="number" min="0" max="9" inputmode="numeric" value="${Number(draft.scoreHome ?? result.homeGoals)}" aria-label="${escapeHtml(result.home.name)}预测进球" />
+            <strong>:</strong>
+            <input data-side="away" type="number" min="0" max="9" inputmode="numeric" value="${Number(draft.scoreAway ?? result.awayGoals)}" aria-label="${escapeHtml(result.away.name)}预测进球" />
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function handleMultiScoreInput(event) {
+  const input = event.target.closest("input[data-side]");
+  const row = input?.closest(".multi-score-row");
+  if (!input || !row) return;
+
+  const match = matches.find((item) => matchCacheKey(item) === row.dataset.matchKey);
+  if (!match) return;
+
+  const homeInput = row.querySelector('input[data-side="home"]');
+  const awayInput = row.querySelector('input[data-side="away"]');
+  const scoreHome = clamp(Number(homeInput.value || 0), 0, 9);
+  const scoreAway = clamp(Number(awayInput.value || 0), 0, 9);
+  homeInput.value = String(scoreHome);
+  awayInput.value = String(scoreAway);
+  updateDraftForMatch(match, {
+    scoreHome,
+    scoreAway,
+    pick: finalPickFromScore(scoreHome, scoreAway),
+  });
+
+  if (matchCacheKey(matches[state.matchIndex]) === row.dataset.matchKey) {
+    renderPredictionForm(match, predict(match));
+  }
 }
 
 function buildMultiMatchStrategyShare() {
@@ -1833,6 +2036,7 @@ function render() {
   elements.friendCopy.textContent = watch.friendCopy;
   renderFunTags(match, result);
   renderPredictionForm(match, result);
+  renderMultiScorePanel();
   renderBettingRadar(match, result);
   renderMarket(match, result);
 
@@ -1855,23 +2059,36 @@ async function init() {
   await loadAiAnalysisCache();
   await loadMarketOddsCache();
 
-  matches.forEach((match, index) => {
-    const home = teams[match.home];
-    const away = teams[match.away];
-    const option = document.createElement("option");
-    option.value = String(index);
-    option.textContent = `${match.date} ${match.group}｜${home.name} vs ${away.name}｜${renderMatchStatus(match)}`;
-    elements.matchSelect.appendChild(option);
-  });
   state.matchIndex = initialMatchIndex();
-  elements.matchSelect.value = String(state.matchIndex);
+  renderMatchSelectorOptions();
 
   elements.matchSelect.addEventListener("change", (event) => {
     state.matchIndex = Number(event.target.value);
+    renderMatchSelectorOptions();
     render();
   });
 
-  $("#predictButton").addEventListener("click", render);
+  elements.matchQuickFilter.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-filter]");
+    if (!button) return;
+    setMatchFilter(button.dataset.filter);
+  });
+
+  elements.matchSearchInput.addEventListener("input", () => {
+    state.matchSearch = elements.matchSearchInput.value;
+    renderMatchSelectorOptions();
+  });
+
+  $("#predictButton").addEventListener("click", () => {
+    const entries = filteredMatchEntries();
+    if (entries.length > 0) {
+      const currentPosition = entries.findIndex(({ index }) => index === state.matchIndex);
+      const next = entries[(currentPosition + 1) % entries.length] || entries[0];
+      state.matchIndex = next.index;
+      renderMatchSelectorOptions();
+    }
+    render();
+  });
 
   $$(".pick-button").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1912,6 +2129,9 @@ async function init() {
       elements.predictionComparison.textContent = buildPredictionComparison(match, result, draft);
     });
   });
+
+  elements.multiScoreList.addEventListener("input", handleMultiScoreInput);
+  elements.multiScoreList.addEventListener("change", handleMultiScoreInput);
 
   elements.predictionForm.addEventListener("submit", async (event) => {
     event.preventDefault();

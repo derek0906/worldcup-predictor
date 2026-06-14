@@ -33,6 +33,9 @@ assert.match(indexSource, /今日投注雷达/, "match brief should include bett
 assert.match(indexSource, /世界杯朋友局策略桌/, "site should use a friend-group strategy table identity");
 assert.match(indexSource, /今日策略雷达/, "radar copy should feel like a strategy helper instead of a model report");
 assert.match(indexSource, /id="copyMultiStrategyButton"/, "prediction panel should include multi-match strategy sharing");
+assert.match(indexSource, /id="matchQuickFilter"/, "match selector should include quick date filters");
+assert.match(indexSource, /id="matchSearchInput"/, "match selector should include search for large schedules");
+assert.match(indexSource, /id="multiScorePanel"/, "prediction panel should include a batch score picker");
 assert.match(indexSource, /id="predictionPanel"/, "index.html should include prediction panel");
 assert.match(indexSource, /id="leaderboardRows"/, "index.html should include leaderboard rows");
 assert.match(indexSource, /id="strategyCard"/, "index.html should include a shareable strategy card");
@@ -49,6 +52,10 @@ assert.match(appSource, /renderStrategyCard/, "app.js should render the strategy
 assert.match(appSource, /buildBettingRadar/, "app.js should build the betting radar replacement for quick judgment");
 assert.match(appSource, /buildExpandedStrategyCard/, "app.js should build expanded betting strategy sections");
 assert.match(appSource, /buildMultiMatchStrategyShare/, "app.js should build compact multi-match strategy copy");
+assert.match(appSource, /renderMatchSelectorOptions/, "app.js should render filtered match selector options");
+assert.match(appSource, /renderMultiScorePanel/, "app.js should let users fill multiple same-day scores before sharing");
+assert.match(appSource, /multiStrategySelection/, "multi-match sharing should use a shared same-day selection helper");
+assert.match(appSource, /updateDraftForMatch/, "batch score inputs should save into the same draft storage as single match strategy");
 assert.match(appSource, /userStrategyChoiceText/, "strategy card should be built from user-selected strategy choices");
 assert.match(appSource, /renderLeaderboardStrategy/, "leaderboard should render another user's saved strategy");
 assert.match(appSource, /看策略/, "leaderboard rows should offer a view-strategy action");
