@@ -42,6 +42,9 @@ assert.doesNotMatch(indexSource, /id="scoreHomeInput"/, "friend interaction shou
 assert.doesNotMatch(indexSource, /id="strategyCard"/, "friend interaction should not show the single-match strategy card");
 assert.match(indexSource, /id="predictionPanel"/, "index.html should include prediction panel");
 assert.match(indexSource, /id="leaderboardRows"/, "index.html should include leaderboard rows");
+assert.match(indexSource, /id="leaderboardTabs"/, "leaderboard should include daily/overall tabs");
+assert.match(indexSource, /data-leaderboard-mode="daily"/, "leaderboard should include a daily ranking tab");
+assert.match(indexSource, /data-leaderboard-mode="overall"/, "leaderboard should include an overall ranking tab");
 assert.match(appSource, /loadLeaderboard/, "app.js should load shared leaderboard");
 assert.match(appSource, /submitPredictionBatch/, "app.js should submit one same-day batch to leaderboard");
 assert.match(appSource, /buildFunTags/, "app.js should render fun tags");
@@ -51,6 +54,10 @@ assert.match(appSource, /buildMultiMatchStrategyShare/, "app.js should build com
 assert.match(appSource, /renderMatchSelectorOptions/, "app.js should render filtered match selector options");
 assert.match(appSource, /renderMultiScorePanel/, "app.js should let users fill multiple same-day scores before sharing");
 assert.match(appSource, /multiStrategySelection/, "multi-match sharing should use a shared same-day selection helper");
+assert.match(appSource, /activeBatchKey/, "friend batch should follow the currently selected match date");
+assert.match(appSource, /selectFirstFilteredMatch/, "match filter changes should move the active batch to that date");
+assert.match(appSource, /renderLeaderboardTabs/, "frontend should switch between daily leaderboard and overall leaderboard");
+assert.match(appSource, /leaderboardMode/, "frontend state should track daily versus overall leaderboard mode");
 assert.match(appSource, /updateDraftForMatch/, "batch score inputs should save into the same draft storage as single match strategy");
 assert.match(appSource, /userStrategyChoiceText/, "strategy card should be built from user-selected strategy choices");
 assert.match(appSource, /buildPredictionBatchPayload/, "frontend should build one payload containing all same-day predictions");
@@ -61,13 +68,14 @@ assert.match(appSource, /batchScoreText/, "leaderboard should display batch hit 
 assert.match(appSource, /我的选择/, "shared strategy copy should emphasize the user's own choices");
 assert.match(appSource, /SHARE_SITE_URL/, "shared strategy copy should include a reusable site URL");
 assert.match(appSource, /来这里生成你的策略/, "shared strategy copy should invite friends back to the site");
-assert.match(appSource, /今日多场策略/, "shared prediction text should include today's multi-match strategy");
-assert.match(appSource, /风险等级/, "shared prediction text should include risk level");
+assert.match(appSource, /多场波胆/, "shared prediction text should focus on multi-match correct scores");
+assert.match(appSource, /scoreDeviationComment/, "shared score text should include a model-deviation fun comment");
 assert.match(appSource, /让球/, "shared strategy text should include spread strategy");
 assert.match(appSource, /大小球/, "shared strategy text should include totals strategy");
 assert.match(appSource, /波胆/, "shared strategy text should include correct-score strategy");
 assert.match(appSource, /开球/, "shared strategy text should include kickoff strategy");
 assert.match(appSource, /角球/, "shared strategy text should include corner strategy");
+assert.doesNotMatch(appSource.match(/function buildMultiMatchStrategyShare\(\) \{[\s\S]*?\n\}/)?.[0] || "", /让球|大小球|角球|稳胆|风险/, "multi-match share copy should only include correct-score picks and fun comments");
 assert.match(stylesSource, /--grass/, "visual style should include grass-green theme tokens");
 assert.match(stylesSource, /--gold-bright/, "visual style should include gold highlight tokens");
 assert.match(stylesSource, /--ticket/, "strategy cards should use a ticket-like surface token");
@@ -75,6 +83,8 @@ assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"),
 assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /sanitizePredictionBatch/, "leaderboard storage should sanitize batch predictions");
 assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /clientIpHash/, "leaderboard storage should limit submissions by hashed IP");
 assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /batchScoreText/, "leaderboard rows should include readable batch scores");
+assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /dailyRows/, "leaderboard API should return day-specific rankings");
+assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /overallRows/, "leaderboard API should return an overall ranking");
 assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /spreadChoice/, "leaderboard storage should persist spread strategy choice");
 assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /totalChoice/, "leaderboard storage should persist totals strategy choice");
 assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /cornerChoice/, "leaderboard storage should persist corner strategy choice");

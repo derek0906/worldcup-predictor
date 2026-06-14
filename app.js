@@ -478,6 +478,7 @@ const state = {
   userPick: "home",
   matchFilter: "today",
   matchSearch: "",
+  leaderboardMode: "daily",
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -555,6 +556,7 @@ const elements = {
   predictionNotice: $("#predictionNotice"),
   funTags: $("#funTags"),
   leaderboardStatus: $("#leaderboardStatus"),
+  leaderboardTabs: $("#leaderboardTabs"),
   leaderboardRows: $("#leaderboardRows"),
   leaderboardUpdated: $("#leaderboardUpdated"),
   leaderboardNote: $("#leaderboardNote"),
@@ -1372,13 +1374,13 @@ function renderPredictionForm(match, result) {
   const selection = multiStrategySelection();
   const locked = isMultiScoreLocked(selection.matches);
   elements.submitPredictionButton.disabled = locked;
-  elements.submitPredictionButton.textContent = locked ? "已开球，停止上传" : "提交今日战绩到榜单";
+  elements.submitPredictionButton.textContent = locked ? "已开球，停止上传" : "提交这张票到榜单";
   elements.predictionComparison.textContent = selection.matches.length
-    ? `今日这张票共 ${selection.matches.length} 场，榜单会按 ${selection.matches.length}中几 排名。`
+    ? `${selection.batchKey} 这张票共 ${selection.matches.length} 场，当天榜会按 ${selection.matches.length}中几 排名。`
     : "暂无可提交的今日比赛。";
   elements.predictionNotice.textContent = locked
-    ? "今日批次里已有比赛开球，停止上传，防止赛后刷榜。"
-    : "同一个 IP 对今日这张票只能提交一次；提交后不能覆盖。";
+    ? "这个日期批次里已有比赛开球，停止上传，防止赛后刷榜。"
+    : "同一个 IP 对这张日期票只能提交一次；提交后不能覆盖。";
 }
 
 function formatLeaderboardTime(value) {
@@ -1404,17 +1406,35 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function leaderboardRowsForMode(data) {
+  if (state.leaderboardMode === "overall") {
+    return Array.isArray(data.overallRows) ? data.overallRows : Array.isArray(data.rows) ? data.rows : [];
+  }
+  const daily = data.dailyRows && typeof data.dailyRows === "object" ? data.dailyRows : {};
+  return Array.isArray(daily[activeBatchKey()]) ? daily[activeBatchKey()] : [];
+}
+
+function renderLeaderboardTabs() {
+  elements.leaderboardTabs.querySelectorAll("button[data-leaderboard-mode]").forEach((button) => {
+    button.classList.toggle("selected", button.dataset.leaderboardMode === state.leaderboardMode);
+  });
+}
+
 function renderLeaderboard(data = leaderboardCache, mode = "online") {
   leaderboardCache = data;
-  const rows = Array.isArray(data.rows) ? data.rows : [];
+  const rows = leaderboardRowsForMode(data);
+  renderLeaderboardTabs();
   elements.leaderboardStatus.textContent = mode === "local" ? "本地模式" : "榜单已更新";
   elements.leaderboardUpdated.textContent = data.updatedAt ? formatLeaderboardTime(data.updatedAt) : "娱乐榜";
-  elements.leaderboardNote.textContent = data.note || "娱乐榜单，非严格防作弊。";
+  elements.leaderboardNote.textContent =
+    state.leaderboardMode === "overall"
+      ? "总榜统计所有已提交比赛，按总命中数和连红排序。"
+      : `${activeBatchKey()} 当天榜，只统计这一天的比赛票。`;
 
   if (rows.length === 0) {
     elements.leaderboardRows.innerHTML = `
       <div class="leaderboard-empty">
-        还没有上榜记录。抢一个首预测，朋友来了就有东西可以追。
+        ${state.leaderboardMode === "overall" ? "总榜还没有记录。" : "这个比赛日还没有上榜记录。"}
       </div>
     `;
     return;
@@ -1556,7 +1576,7 @@ async function submitPredictionBatch() {
 
   const selected = multiStrategyMatches();
   if (isMultiScoreLocked(selected)) {
-    elements.predictionNotice.textContent = "今日批次里已有比赛开球，停止上传，防止赛后刷榜。";
+    elements.predictionNotice.textContent = "这个日期批次里已有比赛开球，停止上传，防止赛后刷榜。";
     renderPredictionForm(matches[state.matchIndex], predict(matches[state.matchIndex]));
     return;
   }
@@ -1572,7 +1592,7 @@ async function submitPredictionBatch() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "提交失败");
     renderLeaderboard(data.leaderboard);
-    elements.predictionNotice.textContent = `已提交到连红榜：今日 ${payload.entries.length} 场，只能提交这一次。`;
+    elements.predictionNotice.textContent = `已提交到连红榜：${activeBatchKey()} 共 ${payload.entries.length} 场，只能提交这一次。`;
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     elements.predictionNotice.textContent = message
@@ -1693,21 +1713,47 @@ function setMatchFilter(filter) {
   elements.matchQuickFilter.querySelectorAll("button").forEach((button) => {
     button.classList.toggle("selected", button.dataset.filter === filter);
   });
+  selectFirstFilteredMatch();
   renderMatchSelectorOptions();
 }
 
+function selectFirstFilteredMatch() {
+  const entries = filteredMatchEntries();
+  if (entries.length > 0 && !entries.some(({ index }) => index === state.matchIndex)) {
+    state.matchIndex = entries[0].index;
+  }
+}
+
+function activeBatchKey(now = new Date()) {
+  const match = matches[state.matchIndex];
+  if (match?.kickoffAt) return matchChinaDateKey(match);
+  if (state.matchFilter === "today") return chinaDateKey(now);
+  if (state.matchFilter === "tomorrow") return chinaDateKey(addDays(now, 1));
+  const next = matches
+    .filter((item) => !hasKickedOff(item))
+    .sort((a, b) => new Date(a.kickoffAt || 0) - new Date(b.kickoffAt || 0))[0];
+  return next ? matchChinaDateKey(next) : chinaDateKey(now);
+}
+
+function matchesForBatchKey(batchKey) {
+  return matches
+    .filter((match) => matchChinaDateKey(match) === batchKey)
+    .sort((a, b) => new Date(a.kickoffAt || 0) - new Date(b.kickoffAt || 0));
+}
+
 function multiStrategySelection(now = new Date()) {
-  const sorted = matches
-    .map((match, index) => ({ match, index }))
-    .sort((a, b) => new Date(a.match.kickoffAt || 0) - new Date(b.match.kickoffAt || 0));
+  const batchKey = activeBatchKey(now);
+  const selected = matchesForBatchKey(batchKey);
   const upcoming = matches
     .map((match, index) => ({ match, index }))
     .filter(({ match }) => !hasKickedOff(match))
     .sort((a, b) => new Date(a.match.kickoffAt || 0) - new Date(b.match.kickoffAt || 0));
-  const today = sorted.filter(({ match }) => sameChinaDate(match, now));
+  const fallbackKey = upcoming[0] ? matchChinaDateKey(upcoming[0].match) : "";
+  const fallback = fallbackKey ? matchesForBatchKey(fallbackKey) : [];
   return {
-    matches: (today.length > 0 ? today : upcoming.slice(0, 3)).map(({ match }) => match),
-    mode: today.length > 0 ? "today" : "fallback",
+    batchKey: selected.length > 0 ? batchKey : fallbackKey,
+    matches: selected.length > 0 ? selected : fallback,
+    mode: selected.length > 0 ? "selected" : "fallback",
   };
 }
 
@@ -1716,10 +1762,10 @@ function multiStrategyMatches(now = new Date()) {
 }
 
 function renderMultiScorePanel() {
-  const { matches: selected, mode } = multiStrategySelection();
+  const { matches: selected, mode, batchKey } = multiStrategySelection();
   const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
   elements.multiScoreMeta.textContent =
-    mode === "today" ? `${selected.length} 场今日比赛` : "今天暂无比赛，显示最近 3 场未开球";
+    mode === "selected" ? `${batchKey} · ${selected.length} 场比赛` : "当前日期暂无比赛，显示最近一个比赛日";
 
   if (selected.length === 0) {
     elements.multiScoreList.innerHTML = `<p class="market-note">暂无可填写的未开球比赛。</p>`;
@@ -1773,21 +1819,34 @@ function handleMultiScoreInput(event) {
   }
 }
 
+function scoreDeviationComment(draft, result) {
+  const userHome = Number(draft.scoreHome ?? result.homeGoals);
+  const userAway = Number(draft.scoreAway ?? result.awayGoals);
+  const modelHome = Number(result.homeGoals);
+  const modelAway = Number(result.awayGoals);
+  const gap = Math.abs(userHome - modelHome) + Math.abs(userAway - modelAway);
+  const userPick = finalPickFromScore(userHome, userAway);
+  const model = modelPick(result);
+
+  if (gap === 0) return "趣味点评：和模型同款剧本，属于理性派交作业。";
+  if (userPick !== model) return `趣味点评：和模型反着来，${pickLabel(userPick, result)}这手有点朋友局火药味。`;
+  if (gap <= 2) return "趣味点评：方向跟模型同路，比分稍微加了点个人审美。";
+  return "趣味点评：比分比模型大胆不少，主打一个先把聊天群点燃。";
+}
+
 function buildMultiMatchStrategyShare() {
-  const selected = multiStrategyMatches();
+  const { matches: selected, batchKey } = multiStrategySelection();
   const drafts = storageGet(PREDICTION_DRAFTS_KEY, {});
   const rows = selected.map((match) => {
     const result = predict(match);
     const draft = drafts[matchCacheKey(match)] || currentDraft(match, result);
-    return buildStrategyCard(match, result, draft);
+    const scoreHome = Number(draft.scoreHome ?? result.homeGoals);
+    const scoreAway = Number(draft.scoreAway ?? result.awayGoals);
+    return `${result.home.name} vs ${result.away.name}｜波胆 ${scoreHome}-${scoreAway}｜${scoreDeviationComment({ scoreHome, scoreAway }, result)}`;
   });
-  const steadyCount = rows.filter((row) => row.risk.includes("中低") || row.edge.includes("稳健")).length;
-  const upsetCount = rows.filter((row) => row.title.includes("冷门") || row.edge.includes("分歧")).length;
-  const cornerHotCount = rows.filter((row) => row.cornerStrategy.includes("大角偏热")).length;
-  const summary = `今日多场策略：${steadyCount}场稳胆，${upsetCount}场冷门观察，角球偏大${cornerHotCount}场。`;
   return [
-    summary,
-    ...rows.map((row) => row.compact),
+    `${batchKey} 多场波胆：`,
+    ...rows,
     `来这里生成你的策略：${SHARE_SITE_URL}`,
     "仅供朋友局娱乐，不构成投注建议。",
   ].join("\n");
@@ -2008,6 +2067,7 @@ function render() {
   renderFunTags(match, result);
   renderPredictionForm(match, result);
   renderMultiScorePanel();
+  renderLeaderboard(leaderboardCache);
   renderBettingRadar(match, result);
   renderMarket(match, result);
 
@@ -2043,11 +2103,21 @@ async function init() {
     const button = event.target.closest("button[data-filter]");
     if (!button) return;
     setMatchFilter(button.dataset.filter);
+    render();
   });
 
   elements.matchSearchInput.addEventListener("input", () => {
     state.matchSearch = elements.matchSearchInput.value;
+    selectFirstFilteredMatch();
     renderMatchSelectorOptions();
+    render();
+  });
+
+  elements.leaderboardTabs.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-leaderboard-mode]");
+    if (!button) return;
+    state.leaderboardMode = button.dataset.leaderboardMode;
+    renderLeaderboard(leaderboardCache);
   });
 
   $("#predictButton").addEventListener("click", () => {

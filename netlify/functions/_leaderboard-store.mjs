@@ -277,6 +277,48 @@ function predictionEntries(prediction) {
 
 export function buildLeaderboard(predictions, matches) {
   const matchByKey = new Map(matches.map((match) => [match.key || `${match.home}-${match.away}`, match]));
+  const overallRows = buildRows(predictions, matchByKey, "overall");
+  const dailyRows = {};
+  const batchKeys = [...new Set(predictions.map((prediction) => prediction.batchKey).filter(Boolean))];
+  for (const batchKey of batchKeys) {
+    dailyRows[batchKey] = buildRows(
+      predictions.filter((prediction) => prediction.batchKey === batchKey),
+      matchByKey,
+      "daily",
+    );
+  }
+
+  const recent = predictions
+    .slice()
+    .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
+    .slice(0, 8)
+    .map((prediction) => ({
+      nickname: prediction.nickname,
+      batchKey: prediction.batchKey || "",
+      entries: publicBatchStrategies(prediction),
+      matchKey: prediction.matchKey || prediction.entries?.[0]?.matchKey || "",
+      pick: prediction.pick || prediction.entries?.[0]?.pick || "",
+      scoreHome: prediction.scoreHome ?? prediction.entries?.[0]?.scoreHome,
+      scoreAway: prediction.scoreAway ?? prediction.entries?.[0]?.scoreAway,
+      confidence: prediction.confidence ?? prediction.entries?.[0]?.confidence,
+      spreadChoice: prediction.spreadChoice || prediction.entries?.[0]?.spreadChoice || "none",
+      totalChoice: prediction.totalChoice || prediction.entries?.[0]?.totalChoice || "none",
+      cornerChoice: prediction.cornerChoice || prediction.entries?.[0]?.cornerChoice || "none",
+      riskChoice: prediction.riskChoice || prediction.entries?.[0]?.riskChoice || "medium",
+      updatedAt: prediction.updatedAt,
+    }));
+
+  return {
+    rows: overallRows.slice(0, 20),
+    overallRows: overallRows.slice(0, 20),
+    dailyRows,
+    recent,
+    updatedAt: new Date().toISOString(),
+    note: "娱乐榜单，非严格防作弊。",
+  };
+}
+
+function buildRows(predictions, matchByKey, mode) {
   const byUser = new Map();
 
   for (const prediction of predictions) {
@@ -322,12 +364,14 @@ export function buildLeaderboard(predictions, matches) {
       .slice()
       .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
     const latestEntries = predictionEntries(latest || {});
-    const batchTotal = latestEntries.length;
-    const batchHits = latestEntries.filter((entry) => {
+    const scoreEntries = mode === "overall" ? completed : latestEntries;
+    const batchTotal = mode === "overall" ? flatPredictions.length : latestEntries.length;
+    const batchHits = scoreEntries.filter((entry) => {
       const match = matchByKey.get(entry.matchKey);
       const result = predictionResult(match);
-      return result && entry.pick === result;
+      return "hit" in entry ? entry.hit : result && entry.pick === result;
     }).length;
+    const scoreText = mode === "overall" ? `总榜 ${batchScoreText(batchTotal, batchHits)}` : batchScoreText(batchTotal, batchHits);
 
     return {
       nickname: user.nickname,
@@ -337,7 +381,7 @@ export function buildLeaderboard(predictions, matches) {
       batchKey: latest?.batchKey || latestEntries[0]?.batchKey || "",
       batchHits,
       batchTotal,
-      batchScoreText: batchScoreText(batchTotal, batchHits),
+      batchScoreText: scoreText,
       latestMatch: latest?.matchKey || latestEntries[0]?.matchKey || "",
       latestPick: latest?.pick || latestEntries[0]?.pick || "",
       latestStrategy: latest && !Array.isArray(latest.entries) ? publicStrategy(latest) : null,
@@ -352,30 +396,5 @@ export function buildLeaderboard(predictions, matches) {
     return String(b.updatedAt).localeCompare(String(a.updatedAt));
   });
 
-  const recent = predictions
-    .slice()
-    .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
-    .slice(0, 8)
-    .map((prediction) => ({
-      nickname: prediction.nickname,
-      batchKey: prediction.batchKey || "",
-      entries: publicBatchStrategies(prediction),
-      matchKey: prediction.matchKey || prediction.entries?.[0]?.matchKey || "",
-      pick: prediction.pick || prediction.entries?.[0]?.pick || "",
-      scoreHome: prediction.scoreHome ?? prediction.entries?.[0]?.scoreHome,
-      scoreAway: prediction.scoreAway ?? prediction.entries?.[0]?.scoreAway,
-      confidence: prediction.confidence ?? prediction.entries?.[0]?.confidence,
-      spreadChoice: prediction.spreadChoice || prediction.entries?.[0]?.spreadChoice || "none",
-      totalChoice: prediction.totalChoice || prediction.entries?.[0]?.totalChoice || "none",
-      cornerChoice: prediction.cornerChoice || prediction.entries?.[0]?.cornerChoice || "none",
-      riskChoice: prediction.riskChoice || prediction.entries?.[0]?.riskChoice || "medium",
-      updatedAt: prediction.updatedAt,
-    }));
-
-  return {
-    rows: rows.slice(0, 20),
-    recent,
-    updatedAt: new Date().toISOString(),
-    note: "娱乐榜单，非严格防作弊。",
-  };
+  return rows;
 }
