@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "test": "node scripts/check-site.mjs"
+    "test": "node scripts/check-site.mjs",
+    "update:real-data": "node scripts/update-real-data.mjs",
+    "update:odds": "node scripts/update-market-odds.mjs"
   },
   "devDependencies": {}
 }

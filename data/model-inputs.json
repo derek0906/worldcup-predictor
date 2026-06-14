@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "updatedAt": "2026-06-13T16:33:33.929Z",
+    "sources": [
+      "football-data.org for fixtures, scores, and match status",
+      "The Odds API for market odds",
+      "External TEAM_RATINGS_SOURCE_URL for Elo/FIFA-style team rating cache"
+    ]
+  },
+  "weights": {
+    "rating": 0.36,
+    "form": 0.22,
+    "attack": 0.18,
+    "defense": 0.14,
+    "experience": 0.1,
+    "hostBoost": 1
+  },
+  "notes": [
+    "The frontend reads cached JSON only; API keys stay in local or CI environments.",
+    "If caches cannot be loaded, app.js falls back to built-in seed data."
+  ]
+}

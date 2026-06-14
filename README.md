@@ -33,6 +33,48 @@ node scripts/check-site.mjs
 - 市场数据缺少波胆或角球时，前端是否有兜底文案。
 - 没有配置赔率数据源时，更新脚本是否跳过写入，避免制造“自动更新成功”的错觉。
 
+## 真实数据缓存
+
+网站前端不会直接调用第三方 API。真实数据通过脚本预先写入缓存 JSON，访客只读取静态文件，API key 不会暴露。
+
+核心缓存文件：
+
+- `data/matches.json`：赛程、比分、比赛状态，优先来自 football-data.org。
+- `data/team-ratings.json`：球队实力评分，可接入 Elo/FIFA 风格外部评分源。
+- `data/model-inputs.json`：模型权重和数据来源说明。
+- `data/market-odds.json`：赔率市场观察，来自 The Odds API 或自定义授权源。
+
+刷新赛程、比分和球队评分：
+
+```bash
+FOOTBALL_DATA_API_KEY=你的key \
+TEAM_RATINGS_SOURCE_URL=https://你的评分数据源.json \
+node scripts/update-real-data.mjs
+```
+
+`TEAM_RATINGS_SOURCE_URL` 是可选项。它可以返回下面任意一种格式：
+
+```json
+{
+  "source": "World Football Elo / custom cache",
+  "teams": {
+    "brazil": { "elo": 2140, "fifaRank": 1, "form": 86 },
+    "france": { "elo": 2100, "fifaRank": 2, "form": 84 }
+  }
+}
+```
+
+或者：
+
+```json
+[
+  { "key": "brazil", "elo": 2140, "fifaRank": 1, "form": 86 },
+  { "key": "france", "elo": 2100, "fifaRank": 2, "form": 84 }
+]
+```
+
+如果没有配置 API key，脚本会保留现有缓存，网站仍然可用。
+
 ## 定时市场数据
 
 市场赔率观察读取 `data/market-odds.json`。仓库内的 GitHub Actions 会每 30 分钟运行一次：

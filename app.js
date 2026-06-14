@@ -1,4 +1,4 @@
-const teams = {
+let teams = {
   mexico: {
     name: "墨西哥",
     short: "MEX",
@@ -265,7 +265,7 @@ const teams = {
   },
 };
 
-const matches = [
+let matches = [
   {
     group: "A组",
     date: "6月11日",
@@ -473,6 +473,30 @@ const elements = {
 let latestPayload = null;
 let aiAnalysisCache = {};
 let marketOddsCache = {};
+
+function applyRealDataCache(realData) {
+  const realMatches = Array.isArray(realData.matches?.matches) ? realData.matches.matches : [];
+  const realTeams = realData.ratings?.teams || {};
+
+  if (realMatches.length > 0) {
+    const byKey = new Map(realMatches.map((match) => [match.key || matchCacheKey(match), match]));
+    matches = matches.map((match) => {
+      const realMatch = byKey.get(matchCacheKey(match));
+      return realMatch ? { ...match, ...realMatch } : match;
+    });
+  }
+
+  for (const [key, rating] of Object.entries(realTeams)) {
+    if (!teams[key]) continue;
+    teams[key] = {
+      ...teams[key],
+      ...rating,
+      name: teams[key].name,
+      short: teams[key].short,
+      flag: teams[key].flag,
+    };
+  }
+}
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -919,6 +943,26 @@ async function loadMarketOddsCache() {
   }
 }
 
+async function loadRealDataCache() {
+  try {
+    const [matchesResponse, ratingsResponse] = await Promise.all([
+      fetch("./data/matches.json", { cache: "no-store" }),
+      fetch("./data/team-ratings.json", { cache: "no-store" }),
+    ]);
+
+    if (!matchesResponse.ok || !ratingsResponse.ok) {
+      throw new Error("Real data cache not found");
+    }
+
+    applyRealDataCache({
+      matches: await matchesResponse.json(),
+      ratings: await ratingsResponse.json(),
+    });
+  } catch {
+    // Keep the built-in seed data so the static site remains usable offline.
+  }
+}
+
 function render() {
   const match = matches[state.matchIndex];
   const result = predict(match);
@@ -982,6 +1026,7 @@ function render() {
 }
 
 async function init() {
+  await loadRealDataCache();
   await loadAiAnalysisCache();
   await loadMarketOddsCache();
 

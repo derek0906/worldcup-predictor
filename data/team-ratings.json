@@ -1,0 +1,224 @@
+{
+  "meta": {
+    "source": "Seed cache. Refresh with scripts/update-real-data.mjs and TEAM_RATINGS_SOURCE_URL for Elo/FIFA rating input.",
+    "updatedAt": "2026-06-14T00:00:00.000+08:00"
+  },
+  "teams": {
+    "mexico": {
+      "rating": 79,
+      "form": 72,
+      "attack": 76,
+      "defense": 73,
+      "experience": 84,
+      "hostBoost": 6,
+      "dataSource": "seed"
+    },
+    "southAfrica": {
+      "rating": 66,
+      "form": 65,
+      "attack": 62,
+      "defense": 64,
+      "experience": 58,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "korea": {
+      "rating": 76,
+      "form": 74,
+      "attack": 73,
+      "defense": 71,
+      "experience": 78,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "czechia": {
+      "rating": 73,
+      "form": 70,
+      "attack": 71,
+      "defense": 72,
+      "experience": 66,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "canada": {
+      "rating": 72,
+      "form": 71,
+      "attack": 72,
+      "defense": 68,
+      "experience": 57,
+      "hostBoost": 6,
+      "dataSource": "seed"
+    },
+    "bosnia": {
+      "rating": 71,
+      "form": 68,
+      "attack": 70,
+      "defense": 69,
+      "experience": 61,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "usa": {
+      "rating": 78,
+      "form": 73,
+      "attack": 76,
+      "defense": 72,
+      "experience": 74,
+      "hostBoost": 6,
+      "dataSource": "seed"
+    },
+    "paraguay": {
+      "rating": 73,
+      "form": 71,
+      "attack": 69,
+      "defense": 75,
+      "experience": 70,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "brazil": {
+      "rating": 91,
+      "form": 84,
+      "attack": 91,
+      "defense": 83,
+      "experience": 95,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "morocco": {
+      "rating": 82,
+      "form": 80,
+      "attack": 78,
+      "defense": 81,
+      "experience": 74,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "germany": {
+      "rating": 87,
+      "form": 82,
+      "attack": 86,
+      "defense": 81,
+      "experience": 94,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "curacao": {
+      "rating": 61,
+      "form": 66,
+      "attack": 60,
+      "defense": 58,
+      "experience": 45,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "spain": {
+      "rating": 90,
+      "form": 88,
+      "attack": 88,
+      "defense": 84,
+      "experience": 91,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "capeVerde": {
+      "rating": 67,
+      "form": 70,
+      "attack": 66,
+      "defense": 64,
+      "experience": 45,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "france": {
+      "rating": 92,
+      "form": 86,
+      "attack": 90,
+      "defense": 86,
+      "experience": 93,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "senegal": {
+      "rating": 80,
+      "form": 77,
+      "attack": 76,
+      "defense": 79,
+      "experience": 72,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "argentina": {
+      "rating": 91,
+      "form": 87,
+      "attack": 88,
+      "defense": 84,
+      "experience": 96,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "algeria": {
+      "rating": 75,
+      "form": 77,
+      "attack": 74,
+      "defense": 71,
+      "experience": 66,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "austria": {
+      "rating": 78,
+      "form": 76,
+      "attack": 75,
+      "defense": 76,
+      "experience": 63,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "jordan": {
+      "rating": 63,
+      "form": 68,
+      "attack": 62,
+      "defense": 61,
+      "experience": 43,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "england": {
+      "rating": 89,
+      "form": 84,
+      "attack": 87,
+      "defense": 82,
+      "experience": 87,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "croatia": {
+      "rating": 82,
+      "form": 76,
+      "attack": 78,
+      "defense": 79,
+      "experience": 88,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "portugal": {
+      "rating": 88,
+      "form": 83,
+      "attack": 88,
+      "defense": 80,
+      "experience": 86,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    },
+    "colombia": {
+      "rating": 81,
+      "form": 82,
+      "attack": 79,
+      "defense": 77,
+      "experience": 74,
+      "hostBoost": 0,
+      "dataSource": "seed"
+    }
+  }
+}

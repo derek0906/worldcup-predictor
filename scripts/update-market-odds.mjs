@@ -1,6 +1,20 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 const outputPath = process.argv[2] || "data/market-odds.json";
+const matchMap = [
+  { key: "mexico-southAfrica", home: "mexico", away: "southafrica" },
+  { key: "korea-czechia", home: "southkorea", away: "czech" },
+  { key: "canada-bosnia", home: "canada", away: "bosnia" },
+  { key: "usa-paraguay", home: "unitedstates", away: "paraguay" },
+  { key: "brazil-morocco", home: "brazil", away: "morocco" },
+  { key: "germany-curacao", home: "germany", away: "curacao" },
+  { key: "spain-capeVerde", home: "spain", away: "capeverde" },
+  { key: "france-senegal", home: "france", away: "senegal" },
+  { key: "argentina-algeria", home: "argentina", away: "algeria" },
+  { key: "austria-jordan", home: "austria", away: "jordan" },
+  { key: "england-croatia", home: "england", away: "croatia" },
+  { key: "portugal-colombia", home: "portugal", away: "colombia" },
+];
 const existing = await readExistingOdds();
 const now = new Date().toISOString();
 
@@ -122,20 +136,7 @@ function findOutcomePrice(market, name) {
 function normalizeName(name) {
   return String(name || "")
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]/g, "");
 }
-
-const matchMap = [
-  { key: "mexico-southAfrica", home: "mexico", away: "southafrica" },
-  { key: "korea-czechia", home: "southkorea", away: "czech" },
-  { key: "canada-bosnia", home: "canada", away: "bosnia" },
-  { key: "usa-paraguay", home: "unitedstates", away: "paraguay" },
-  { key: "brazil-morocco", home: "brazil", away: "morocco" },
-  { key: "germany-curacao", home: "germany", away: "curacao" },
-  { key: "spain-capeVerde", home: "spain", away: "capeverde" },
-  { key: "france-senegal", home: "france", away: "senegal" },
-  { key: "argentina-algeria", home: "argentina", away: "algeria" },
-  { key: "austria-jordan", home: "austria", away: "jordan" },
-  { key: "england-croatia", home: "england", away: "croatia" },
-  { key: "portugal-colombia", home: "portugal", away: "colombia" },
-];

@@ -7,14 +7,26 @@ import { spawnSync } from "node:child_process";
 
 const appSource = await readFile("app.js", "utf8");
 const marketOdds = JSON.parse(await readFile("data/market-odds.json", "utf8"));
+const realMatches = JSON.parse(await readFile("data/matches.json", "utf8"));
+const teamRatings = JSON.parse(await readFile("data/team-ratings.json", "utf8"));
+const modelInputs = JSON.parse(await readFile("data/model-inputs.json", "utf8"));
 
-const matchBlock = appSource.match(/const matches = \[(?<body>[\s\S]*?)\];/);
+const matchBlock = appSource.match(/(?:const|let) matches = \[(?<body>[\s\S]*?)\];/);
 assert.ok(matchBlock, "app.js should define matches");
 assert.match(appSource, /kickoffAt:/, "matches should include ISO kickoffAt values");
 assert.match(appSource, /status:/, "matches should include pre/live/final status");
 assert.match(appSource, /renderMatchStatus/, "UI should render match status instead of only static dates");
 assert.match(appSource, /Array\.isArray\(market\.correctScore\)/, "market rendering should tolerate missing correctScore");
 assert.match(appSource, /market\.corners &&/, "market rendering should tolerate missing corners");
+assert.match(appSource, /loadRealDataCache/, "frontend should try to load real data cache");
+assert.match(appSource, /applyRealDataCache/, "frontend should apply real data before rendering");
+assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /FOOTBALL_DATA_API_KEY/, "real data updater should support football-data.org");
+assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /TEAM_RATINGS_SOURCE_URL/, "real data updater should support external rating input");
+
+assert.ok(Array.isArray(realMatches.matches), "data/matches.json should contain matches array");
+assert.ok(realMatches.meta?.updatedAt, "data/matches.json should include metadata");
+assert.ok(teamRatings.teams && typeof teamRatings.teams === "object", "data/team-ratings.json should contain teams object");
+assert.ok(modelInputs.weights && typeof modelInputs.weights === "object", "data/model-inputs.json should contain model weights");
 
 for (const [key, market] of Object.entries(marketOdds)) {
   assert.ok(market.source, `${key} should have source`);

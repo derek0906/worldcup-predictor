@@ -140,12 +140,12 @@
     }
   },
   "germany-curacao": {
-    "source": "示例市场数据",
-    "updatedAt": "2026-06-11 20:00",
+    "source": "BetMGM",
+    "updatedAt": "2026-06-14T03:18:08.000Z",
     "winner": {
-      "home": 1.22,
-      "draw": 6.3,
-      "away": 12.5
+      "home": 1.06,
+      "draw": 14.5,
+      "away": 36
     },
     "correctScore": [
       {
@@ -168,12 +168,12 @@
     }
   },
   "spain-capeVerde": {
-    "source": "示例市场数据",
-    "updatedAt": "2026-06-11 20:00",
+    "source": "BetMGM",
+    "updatedAt": "2026-06-14T03:18:08.000Z",
     "winner": {
-      "home": 1.18,
-      "draw": 7,
-      "away": 15
+      "home": 1.11,
+      "draw": 10,
+      "away": 23
     },
     "correctScore": [
       {
@@ -196,12 +196,12 @@
     }
   },
   "france-senegal": {
-    "source": "示例市场数据",
-    "updatedAt": "2026-06-11 20:00",
+    "source": "BetMGM",
+    "updatedAt": "2026-06-14T03:18:08.000Z",
     "winner": {
-      "home": 1.7,
-      "draw": 3.58,
-      "away": 5.25
+      "home": 1.45,
+      "draw": 4.33,
+      "away": 7
     },
     "correctScore": [
       {
@@ -224,12 +224,12 @@
     }
   },
   "argentina-algeria": {
-    "source": "示例市场数据",
-    "updatedAt": "2026-06-11 20:00",
+    "source": "BetMGM",
+    "updatedAt": "2026-06-14T03:18:08.000Z",
     "winner": {
-      "home": 1.55,
-      "draw": 4.05,
-      "away": 6.6
+      "home": 1.4,
+      "draw": 4.5,
+      "away": 8
     },
     "correctScore": [
       {
@@ -252,12 +252,12 @@
     }
   },
   "austria-jordan": {
-    "source": "示例市场数据",
-    "updatedAt": "2026-06-11 20:00",
+    "source": "Virgin Bet",
+    "updatedAt": "2026-06-14T03:18:33.000Z",
     "winner": {
-      "home": 1.74,
-      "draw": 3.55,
-      "away": 5.05
+      "home": 1.29,
+      "draw": 5.5,
+      "away": 9
     },
     "correctScore": [
       {
@@ -280,12 +280,12 @@
     }
   },
   "england-croatia": {
-    "source": "示例市场数据",
-    "updatedAt": "2026-06-11 20:00",
+    "source": "BetMGM",
+    "updatedAt": "2026-06-14T03:18:08.000Z",
     "winner": {
-      "home": 1.95,
-      "draw": 3.42,
-      "away": 3.95
+      "home": 1.74,
+      "draw": 3.6,
+      "away": 4.8
     },
     "correctScore": [
       {
@@ -308,12 +308,12 @@
     }
   },
   "portugal-colombia": {
-    "source": "示例市场数据",
-    "updatedAt": "2026-06-11 20:00",
+    "source": "Grosvenor",
+    "updatedAt": "2026-06-14T03:18:09.000Z",
     "winner": {
-      "home": 1.82,
-      "draw": 3.5,
-      "away": 4.45
+      "home": 3.5,
+      "draw": 3.25,
+      "away": 2.1
     },
     "correctScore": [
       {
