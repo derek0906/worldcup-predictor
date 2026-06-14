@@ -1027,6 +1027,15 @@ function formatLeaderboardTime(value) {
   }).format(date);
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderLeaderboard(data = leaderboardCache, mode = "online") {
   leaderboardCache = data;
   const rows = Array.isArray(data.rows) ? data.rows : [];
@@ -1048,7 +1057,7 @@ function renderLeaderboard(data = leaderboardCache, mode = "online") {
     .map((row, index) => `
       <div class="leaderboard-row">
         <span class="rank">${index + 1}</span>
-        <strong>${row.nickname}</strong>
+        <strong>${escapeHtml(row.nickname)}</strong>
         <span>连红 ${row.currentStreak}</span>
         <span>${row.totalHits}/${row.totalPredictions}</span>
       </div>
