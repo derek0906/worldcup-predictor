@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 const STORE_NAME = "worldcup-predictions";
 const PREDICTIONS_KEY = "predictions.json";
 const MAX_PREDICTIONS = 1000;
+const MATCHES_PATH = new URL("../../data/matches.json", import.meta.url);
 
 export function getPredictionsStore() {
   return getStore(STORE_NAME);
@@ -26,7 +27,7 @@ export async function savePredictions(predictions) {
 }
 
 export async function loadMatches() {
-  const matches = JSON.parse(await readFile("data/matches.json", "utf8"));
+  const matches = JSON.parse(await readFile(MATCHES_PATH, "utf8"));
   return Array.isArray(matches.matches) ? matches.matches : [];
 }
 

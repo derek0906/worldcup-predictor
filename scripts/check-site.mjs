@@ -7,6 +7,8 @@ import { spawnSync } from "node:child_process";
 
 const appSource = await readFile("app.js", "utf8");
 const indexSource = await readFile("index.html", "utf8");
+const netlifyConfig = await readFile("netlify.toml", "utf8");
+const leaderboardStoreSource = await readFile("netlify/functions/_leaderboard-store.mjs", "utf8");
 const marketOdds = JSON.parse(await readFile("data/market-odds.json", "utf8"));
 const realMatches = JSON.parse(await readFile("data/matches.json", "utf8"));
 const teamRatings = JSON.parse(await readFile("data/team-ratings.json", "utf8"));
@@ -26,7 +28,14 @@ assert.match(indexSource, /id="leaderboardRows"/, "index.html should include lea
 assert.match(appSource, /loadLeaderboard/, "app.js should load shared leaderboard");
 assert.match(appSource, /submitPrediction/, "app.js should submit user predictions");
 assert.match(appSource, /buildFunTags/, "app.js should render fun tags");
-assert.match(await readFile("netlify/functions/_leaderboard-store.mjs", "utf8"), /getStore/, "leaderboard storage should use Netlify Blobs");
+assert.match(appSource, /initialMatchIndex/, "app.js should choose the nearest relevant match on page load");
+assert.match(appSource, /filter\(\(item\) => item\.kickoffTime >= nowTime\)/, "initial match should prefer upcoming matches");
+assert.match(appSource, /elements\.matchSelect\.value = String\(state\.matchIndex\)/, "match selector should sync to the initial match");
+assert.match(leaderboardStoreSource, /getStore/, "leaderboard storage should use Netlify Blobs");
+assert.doesNotMatch(leaderboardStoreSource, /readFile\("data\/matches\.json"/, "leaderboard function should not rely on cwd-relative data path");
+assert.match(leaderboardStoreSource, /import\.meta\.url/, "leaderboard function should resolve bundled match data from its module location");
+assert.match(netlifyConfig, /functions\s*=\s*"netlify\/functions"/, "netlify.toml should declare the functions directory");
+assert.match(netlifyConfig, /included_files\s*=\s*\["data\/matches\.json"\]/, "netlify.toml should bundle match data for functions");
 assert.match(await readFile("netlify/functions/predictions.mjs", "utf8"), /predictions/, "predictions function should persist predictions");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /FOOTBALL_DATA_API_KEY/, "real data updater should support football-data.org");
 assert.match(await readFile("scripts/update-real-data.mjs", "utf8"), /TEAM_RATINGS_SOURCE_URL/, "real data updater should support external rating input");

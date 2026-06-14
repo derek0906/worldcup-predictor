@@ -797,6 +797,24 @@ function hasKickedOff(match) {
   return new Date(match.kickoffAt).getTime() <= Date.now();
 }
 
+function initialMatchIndex(now = new Date()) {
+  const nowTime = now.getTime();
+  const timedMatches = matches
+    .map((match, index) => ({
+      index,
+      kickoffTime: match.kickoffAt ? new Date(match.kickoffAt).getTime() : Number.NaN,
+    }))
+    .filter((item) => Number.isFinite(item.kickoffTime));
+
+  const upcoming = timedMatches
+    .filter((item) => item.kickoffTime >= nowTime)
+    .sort((a, b) => a.kickoffTime - b.kickoffTime)[0];
+  if (upcoming) return upcoming.index;
+
+  const recent = timedMatches.sort((a, b) => Math.abs(a.kickoffTime - nowTime) - Math.abs(b.kickoffTime - nowTime))[0];
+  return recent?.index || 0;
+}
+
 function buildPredictionComparison(match, result, draft) {
   if (!draft) return "先选一个方向，看看你和模型是不是同路。";
 
@@ -1103,8 +1121,10 @@ async function submitPrediction(match) {
     renderLeaderboard(data.leaderboard);
     elements.predictionNotice.textContent = "已提交到连红榜。比赛完赛后会自动计算是否命中。";
   } catch (error) {
-    elements.predictionNotice.textContent =
-      error instanceof Error ? `提交失败：${error.message}` : "提交失败，已保留在本地草稿。";
+    const message = error instanceof Error ? error.message : "";
+    elements.predictionNotice.textContent = message
+      ? `提交失败：${message}。你的预测已保留在本地，稍后可以再试。`
+      : "提交失败：榜单服务暂时连不上。你的预测已保留在本地，稍后可以再试。";
     renderLeaderboard({ rows: [], recent: [], note: "当前为本地模式：公开榜单部署后可用。" }, "local");
   }
 }
@@ -1336,6 +1356,8 @@ async function init() {
     option.textContent = `${match.date} ${match.group}｜${home.name} vs ${away.name}｜${renderMatchStatus(match)}`;
     elements.matchSelect.appendChild(option);
   });
+  state.matchIndex = initialMatchIndex();
+  elements.matchSelect.value = String(state.matchIndex);
 
   elements.matchSelect.addEventListener("change", (event) => {
     state.matchIndex = Number(event.target.value);
